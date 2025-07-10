@@ -27,7 +27,7 @@ const ServiceLogin = () => {
 
       if (user) {
         alert("Login successful!");
-        navigate('/');        
+        navigate('/service-dashboard');        
       } else {
         alert("Invalid credentials");
       }

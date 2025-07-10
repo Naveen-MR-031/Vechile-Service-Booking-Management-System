@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Home, Phone, Info, LogOut, Calendar } from 'lucide-react';
 import styles from './Navbar.module.css';
 
 const Navbar = ({ activeTab, setActiveTab }) => {
@@ -7,31 +7,56 @@ const Navbar = ({ activeTab, setActiveTab }) => {
     <nav className={styles.navbar}>
       <div className={styles.navContainer}>
         <div className={styles.navBrand}>
-          <div className={styles.brandIcon}>
-            <Settings className={styles.brandIconSvg} />
-          </div>
-          <h1 className={styles.brandTitle}>Vechile Service Hub Dashboard</h1>
+          <Settings className={styles.brandIcon} />
+          <span className={styles.brandText}>Vehicle Service Hub</span>
         </div>
-        <div className={styles.navTabs}>
+        
+        <div className={styles.navLinks}>
           <button
+            className={`${styles.navLink} ${activeTab === 'service' ? styles.active : ''}`}
             onClick={() => setActiveTab('service')}
-            className={`${styles.navTab} ${activeTab === 'service' ? styles.navTabActive : ''}`}
           >
-            Service
+            <Home className={styles.navIcon} />
+            Services
           </button>
+          
           <button
+            className={`${styles.navLink} ${activeTab === 'contact' ? styles.active : ''}`}
             onClick={() => setActiveTab('contact')}
-            className={`${styles.navTab} ${activeTab === 'contact' ? styles.navTabActive : ''}`}
           >
-            Contact Us
+            <Phone className={styles.navIcon} />
+            Contact
           </button>
+          
           <button
+            className={`${styles.navLink} ${activeTab === 'about' ? styles.active : ''}`}
             onClick={() => setActiveTab('about')}
-            className={`${styles.navTab} ${activeTab === 'about' ? styles.navTabActive : ''}`}
           >
-            About Us
+            <Info className={styles.navIcon} />
+            About
+          </button>
+          
+          <button
+            className={`${styles.navLink} ${activeTab === 'bookings' ? styles.active : ''}`}
+            onClick={() => setActiveTab('bookings')}
+          >
+            <Calendar className={styles.navIcon} />
+            Booking Status
+          </button>
+          
+          <button
+            className={`${styles.navLink} ${activeTab === 'settings' ? styles.active : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            <Settings className={styles.navIcon} />
+            Settings
           </button>
         </div>
+        
+        <button className={styles.logoutButton}>
+          <LogOut className={styles.logoutIcon} />
+          Logout
+        </button>
       </div>
     </nav>
   );

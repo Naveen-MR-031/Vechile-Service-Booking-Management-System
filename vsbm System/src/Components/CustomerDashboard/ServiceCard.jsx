@@ -1,96 +1,78 @@
 import React from 'react';
-import { Settings, MapPin, Phone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MapPin, Phone, Star, Calendar } from 'lucide-react';
 import styles from './ServiceCard.module.css';
 
 const ServiceCard = ({ company }) => {
-  const getAvailableServices = () => {
-    const services = [];
-    Object.entries(company.services.serviceTypes).forEach(([key, value]) => {
-      if (value) {
-        services.push(key.charAt(0).toUpperCase() + key.slice(1));
-      }
-    });
-    return services;
-  };
+  const navigate = useNavigate();
 
-  const getVehicleTypes = () => {
-    const vehicles = [];
-    Object.entries(company.services.vehicleTypes).forEach(([key, value]) => {
-      if (value) {
-        vehicles.push(key.charAt(0).toUpperCase() + key.slice(1));
-      }
-    });
-    return vehicles;
+  const handleBookService = () => {
+    navigate('/booking-page', { state: { company } });
   };
 
   return (
     <div className={styles.serviceCard}>
-      <div className={styles.cardImage}>
-        {company.photos && company.photos.length > 0 ? (
+      <div className={styles.cardHeader}>
+        <div className={styles.companyPhoto}>
           <img 
-            src={`http://localhost:5000/images/${company.photos[0]}`} 
+            src={company.photo || 'https://images.pexels.com/photos/3806288/pexels-photo-3806288.jpeg?auto=compress&cs=tinysrgb&w=400'} 
             alt={company.companyName}
             className={styles.companyImage}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
           />
-        ) : null}
-        <div className={styles.placeholderImage}>
-          <Settings className={styles.placeholderIcon} />
+        </div>
+        <div className={styles.ratingBadge}>
+          <Star className={styles.starIcon} />
+          <span>{company.rating || '4.5'}</span>
         </div>
       </div>
-      
+
       <div className={styles.cardContent}>
         <h3 className={styles.companyName}>{company.companyName}</h3>
         
-        <div className={styles.companyInfo}>
-          <div className={styles.infoItem}>
-            <MapPin className={styles.infoIcon} />
-            <span className={styles.infoText}>{company.address}</span>
+        <div className={styles.companyDetails}>
+          <div className={styles.detailItem}>
+            <MapPin className={styles.detailIcon} />
+            <span className={styles.detailText}>{company.address}</span>
           </div>
-          <div className={styles.infoItem}>
-            <Phone className={styles.infoIcon} />
-            <span className={styles.infoText}>{company.phone}</span>
-          </div>
-        </div>
-
-        <div className={styles.servicesSection}>
-          <h4 className={styles.sectionTitle}>Vehicle Types:</h4>
-          <div className={styles.tagContainer}>
-            {getVehicleTypes().map((vehicle, index) => (
-              <span key={index} className={styles.vehicleTag}>
-                {vehicle}
-              </span>
-            ))}
+          
+          <div className={styles.detailItem}>
+            <Phone className={styles.detailIcon} />
+            <span className={styles.detailText}>{company.phone}</span>
           </div>
         </div>
 
-        <div className={styles.servicesSection}>
-          <h4 className={styles.sectionTitle}>Services:</h4>
-          <div className={styles.tagContainer}>
-            {getAvailableServices().slice(0, 4).map((service, index) => (
-              <span key={index} className={styles.serviceTag}>
-                {service}
-              </span>
-            ))}
-            {getAvailableServices().length > 4 && (
-              <span className={styles.moreTag}>
-                +{getAvailableServices().length - 4} more
-              </span>
-            )}
+        <div className={styles.servicesOffered}>
+          <h4 className={styles.servicesTitle}>Services Offered:</h4>
+          <div className={styles.servicesList}>
+            {company.services && company.services.serviceTypes && 
+              Object.entries(company.services.serviceTypes)
+                .filter(([key, value]) => value)
+                .slice(0, 3)
+                .map(([service, _]) => (
+                  <span key={service} className={styles.serviceTag}>
+                    {service.charAt(0).toUpperCase() + service.slice(1)}
+                  </span>
+                ))
+            }
+            {company.services && company.services.serviceTypes && 
+              Object.values(company.services.serviceTypes).filter(Boolean).length > 3 && (
+                <span className={styles.moreServices}>
+                  +{Object.values(company.services.serviceTypes).filter(Boolean).length - 3} more
+                </span>
+              )
+            }
           </div>
         </div>
+      </div>
 
-        <div className={styles.cardActions}>
-          <button className={styles.viewButton}>
-            View Details
-          </button>
-          <button className={styles.bookButton}>
-            Book Service
-          </button>
-        </div>
+      <div className={styles.cardFooter}>
+        <button 
+          onClick={handleBookService}
+          className={styles.bookButton}
+        >
+          <Calendar className={styles.bookIcon} />
+          Book Service
+        </button>
       </div>
     </div>
   );

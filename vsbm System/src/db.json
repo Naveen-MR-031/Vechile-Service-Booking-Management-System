@@ -1,0 +1,25 @@
+{
+  "serviceProviders": [],
+  "customers": [],
+  "bookings": [
+    {
+      "id": "1752169522146",
+      "companyId": "c00c",
+      "companyName": "AutoFix Pro Services",
+      "customerName": "vihnu",
+      "customerPhone": "8234567890",
+      "vehicleType": "Bike",
+      "vehicleModel": "honda city",
+      "serviceType": "Engine Repair",
+      "description": "tire change ",
+      "preferredDate": "2025-07-18",
+      "status": "confirmed",
+      "bookingDate": "2025-07-10T17:45:22.146Z",
+      "confirmedDate": "2025-07-10T17:46:57.261Z",
+      "dropOffDate": "25-09-2004",
+      "pickUpDate": "2024-08-01",
+      "estimatedCost": 15000,
+      "notes": "Confirmed by service provider. Drop-off: 25-09-2004, Pick-up: 2024-08-01"
+    }
+  ]
+}

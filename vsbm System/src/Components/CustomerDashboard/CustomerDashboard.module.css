@@ -1,24 +1,26 @@
+/* CustomerDashboard.module.css */
 .customerDashboard {
   min-height: 100vh;
-  background: #f9fafb;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   display: flex;
   flex-direction: column;
 }
 
 .mainContent {
   flex: 1;
+  padding: 2rem 0;
 }
 
 .footer {
-  background: #111827;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   color: white;
-  margin-top: 4rem;
+  margin-top: auto;
 }
 
 .footerContainer {
-  max-width: 1280px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 1rem;
+  padding: 3rem 1rem 1rem;
 }
 
 .footerGrid {
@@ -31,6 +33,7 @@
 .footerSection {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
 }
 
 .footerBrand {
@@ -41,9 +44,13 @@
 }
 
 .footerBrandIcon {
-  background: #2563eb;
-  padding: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #3b82f6;
   border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .footerBrandIconSvg {
@@ -55,19 +62,20 @@
 .footerBrandText {
   font-size: 1.25rem;
   font-weight: 700;
+  color: white;
 }
 
 .footerDescription {
-  color: #9ca3af;
-  font-size: 0.875rem;
+  color: #94a3b8;
+  line-height: 1.6;
   margin: 0;
-  line-height: 1.5;
 }
 
 .footerTitle {
+  font-size: 1.125rem;
   font-weight: 600;
+  color: white;
   margin: 0 0 1rem 0;
-  font-size: 1rem;
 }
 
 .footerList {
@@ -80,31 +88,34 @@
 }
 
 .footerLink {
-  color: #9ca3af;
+  color: #94a3b8;
   text-decoration: none;
-  font-size: 0.875rem;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 
 .footerLink:hover {
-  color: white;
+  color: #3b82f6;
 }
 
 .footerBottom {
-  border-top: 1px solid #374151;
-  padding-top: 2rem;
+  border-top: 1px solid #475569;
+  padding-top: 1rem;
   text-align: center;
 }
 
 .footerCopyright {
-  color: #9ca3af;
-  font-size: 0.875rem;
+  color: #94a3b8;
   margin: 0;
+  font-size: 0.875rem;
 }
 
 @media (max-width: 768px) {
+  .mainContent {
+    padding: 1rem 0;
+  }
+  
   .footerContainer {
-    padding: 2rem 1rem;
+    padding: 2rem 1rem 1rem;
   }
   
   .footerGrid {

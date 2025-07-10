@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, History, MapPin, Settings } from 'lucide-react';
 import axios from 'axios';
 import SearchBar from './SearchBar';
@@ -6,15 +7,16 @@ import ServiceList from './ServiceList';
 import styles from './Dashboard.module.css';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
 
   useEffect(() => {
-    // Load service providers from JSON server at port 5000
+    // Load service providers from JSON server at port 3333
     const fetchServiceProviders = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/serviceDB');
+        const response = await axios.get('http://localhost:3333/serviceProviders');
         setCompanies(response.data || []);
       } catch (error) {
         console.error('Error loading service providers:', error);
@@ -22,7 +24,7 @@ const Dashboard = () => {
         try {
           const fallbackResponse = await fetch('/src/data/serviceDB.json');
           const fallbackData = await fallbackResponse.json();
-          setCompanies(fallbackData.serviceDB || []);
+          setCompanies(fallbackData.serviceProviders || []);
         } catch (fallbackError) {
           console.error('Fallback also failed:', fallbackError);
           setCompanies([]);
@@ -54,7 +56,7 @@ const Dashboard = () => {
 
       {/* Quick Actions */}
       <div className={styles.quickActions}>
-        <button className={styles.actionCard}>
+        <button className={styles.actionCard} onClick={() => navigate('/booking-page')}>
           <div className={styles.actionIcon}>
             <Plus className={styles.actionIconSvg} />
           </div>
@@ -64,7 +66,7 @@ const Dashboard = () => {
           </div>
         </button>
         
-        <button className={styles.actionCard}>
+        <button className={styles.actionCard} onClick={() => navigate('/booking-status')}>
           <div className={`${styles.actionIcon} ${styles.actionIconGreen}`}>
             <History className={styles.actionIconSvg} />
           </div>

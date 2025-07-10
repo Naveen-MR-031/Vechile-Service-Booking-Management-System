@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react'; 
 import Navbar from './Navbar';
 import Dashboard from './Dashboard';
 import ContactUs from './ContactUs';
 import AboutUs from './AboutUs';
+import Settings from './Settings';
+import BookingStatus from './BookingStatus';
 import styles from './CustomerDashboard.module.css';
 
 const CustomerDashboard = () => {
@@ -17,6 +19,10 @@ const CustomerDashboard = () => {
         return <ContactUs />;
       case 'about':
         return <AboutUs />;
+      case 'settings':
+        return <Settings />;
+      case 'bookings':
+        return <BookingStatus />;
       default:
         return <Dashboard />;
     }
@@ -28,7 +34,7 @@ const CustomerDashboard = () => {
       <main className={styles.mainContent}>
         {renderContent()}
       </main>
-      
+
       {/* Footer */}
       <footer className={styles.footer}>
         <div className={styles.footerContainer}>
@@ -36,7 +42,7 @@ const CustomerDashboard = () => {
             <div className={styles.footerSection}>
               <div className={styles.footerBrand}>
                 <div className={styles.footerBrandIcon}>
-                  <Settings className={styles.footerBrandIconSvg} />
+                  <SettingsIcon className={styles.footerBrandIconSvg} /> {/* ✅ renamed usage */}
                 </div>
                 <span className={styles.footerBrandText}>Vechile Service Hub</span>
               </div>
@@ -73,7 +79,9 @@ const CustomerDashboard = () => {
             </div>
           </div>
           <div className={styles.footerBottom}>
-            <p className={styles.footerCopyright}>&copy; 2025 Vechile Service Hub Platform. All rights reserved.</p>
+            <p className={styles.footerCopyright}>
+              &copy; 2025 Vechile Service Hub Platform. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
