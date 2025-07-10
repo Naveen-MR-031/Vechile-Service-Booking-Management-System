@@ -1,0 +1,199 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #f8fafc, #e0f2fe, #e0e7ff);
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.navWrapper {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  height: 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logoSection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.carIcon {
+  width: 2rem;
+  height: 2rem;
+  color: #2563eb;
+}
+
+.logoText {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #111827;
+}
+
+.providerButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background-color: #2563eb;
+  border: none;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.providerButton:hover {
+  background-color: #1e40af;
+  transform: scale(1.05);
+}
+
+.main {
+  flex: 1;
+  padding: 4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.heroContent {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.heroTitle {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.heroHighlight {
+  display: block;
+  color: #2563eb;
+}
+
+.heroSubtitle {
+  font-size: 1.25rem;
+  color: #4b5563;
+  margin-bottom: 2rem;
+  max-width: 40rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bookButton {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  background: linear-gradient(to right, #22c55e, #16a34a);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.bookButton:hover {
+  background: linear-gradient(to right, #16a34a, #15803d);
+  transform: scale(1.05);
+  box-shadow: 0 15px 20px rgba(0, 0, 0, 0.15);
+}
+
+.iconInline {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  margin-top: 5rem;
+  max-width: 64rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.featureCard {
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  text-align: center;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-0.5rem);
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.1);
+}
+
+.iconWrapper {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBlue {
+  background-color: #dbeafe;
+}
+
+.iconGreen {
+  background-color: #dcfce7;
+}
+
+.iconPurple {
+  background-color: #ede9fe;
+}
+
+.iconFeature {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.featureTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.featureDesc {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.footer {
+  background-color: #111827;
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.footerText {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}

@@ -1,0 +1,16 @@
+{
+  "consumers": [
+    {
+      "id": "50df",
+      "username": "vishnu",
+      "email": "22it061@drngpit.ac.in",
+      "password": "Aa123456"
+    },
+    {
+      "id": "cd79",
+      "username": "naveen",
+      "email": "loosukoothi@gmail.com",
+      "password": "1234567Aa"
+    }
+  ]
+}
