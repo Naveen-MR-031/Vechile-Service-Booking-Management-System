@@ -13,8 +13,8 @@
       "landline": "0987654321",
       "services": {
         "vehicleTypes": {
-          "car": false,
-          "bike": false,
+          "car": true,
+          "bike": true,
           "truck": false,
           "bus": false,
           "auto": false

@@ -136,7 +136,7 @@ const ServiceSignup = () => {
       console.log("Submitting:", fullForm);
       await axios.post("http://localhost:5000/serviceDB", fullForm); // ✅ SUBMIT TO JSON-SERVER
       alert("Signup successful!");
-      navigate("/service-login"); // ✅ REDIRECT ON SUCCESS
+      navigate("/service-login"); 
     } catch (err) {
       console.error(err);
       alert("Signup failed");

@@ -27,7 +27,7 @@ const ServiceLogin = () => {
 
       if (user) {
         alert("Login successful!");
-        // You can redirect here if needed, e.g., navigate("/service-dashboard")
+        navigate('/');        
       } else {
         alert("Invalid credentials");
       }
@@ -43,11 +43,10 @@ const ServiceLogin = () => {
 
   return (
     <div className={styles.pageWrapper}>
-      {/* Dynamic Decorative Blobs */}
+    
       <div className={styles.blobTopLeft}></div>
       <div className={styles.blobBottomRight}></div>
 
-      {/* Decorative Background Images */}
       <div className={styles.imageWrapper}>
         <img
           src="https://media.architecturaldigest.com/photos/66a914f1a958d12e0cc94a8e/16:9/w_2992,h_1683,c_limit/DSC_5903.jpg"
