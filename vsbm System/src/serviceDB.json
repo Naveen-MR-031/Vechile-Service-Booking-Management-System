@@ -1,3 +1,42 @@
 {
-  "serviceDB": []
+  "serviceDB": [
+    {
+      "id": "c00c",
+      "companyName": "zzzz",
+      "username": "dhinaa",
+      "email": "loosuu@gmail.com",
+      "password": "123456789",
+      "confirmPassword": "123456789",
+      "mapLink": "https://maps.app.goo.gl/UBvBYXgtaMDLJaNS7",
+      "address": "asdfghjkl",
+      "phone": "1234567890",
+      "landline": "0987654321",
+      "services": {
+        "vehicleTypes": {
+          "car": false,
+          "bike": false,
+          "truck": false,
+          "bus": false,
+          "auto": false
+        },
+        "serviceTypes": {
+          "general": true,
+          "water": true,
+          "oil": true,
+          "tire": true,
+          "battery": false,
+          "detailing": false,
+          "engine": false,
+          "paint": false,
+          "ac": false,
+          "polishing": false,
+          "denting": false,
+          "towing": false
+        }
+      },
+      "photos": [
+        "Screenshot 2024-09-25 173606.png"
+      ]
+    }
+  ]
 }

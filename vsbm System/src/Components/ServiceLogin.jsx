@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { Wrench, User, Mail, Lock, ArrowRight } from "lucide-react";
 import styles from "./ServiceLogin.module.css";
 
@@ -10,19 +11,29 @@ const ServiceLogin = () => {
 
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Simulated login logic (replace with real logic later)
-    const storedUsers = JSON.parse(localStorage.getItem("serviceProviders")) || [];
-    const user = storedUsers.find(
-      (u) => u.username === username && u.email === email && u.password === password
-    );
+    try {
+      const response = await axios.get("http://localhost:5000/serviceDB");
+      const users = response.data;
 
-    if (user) {
-      alert("Login successful!");
-    } else {
-      alert("Invalid credentials");
+      const user = users.find(
+        (u) =>
+          u.username === username &&
+          u.email === email &&
+          u.password === password
+      );
+
+      if (user) {
+        alert("Login successful!");
+        // You can redirect here if needed, e.g., navigate("/service-dashboard")
+      } else {
+        alert("Invalid credentials");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Error while logging in");
     }
   };
 
@@ -51,7 +62,9 @@ const ServiceLogin = () => {
             <Wrench className={styles.icon} />
           </div>
           <h2 className={styles.title}>Service Provider Login</h2>
-          <p className={styles.subtitle}>Access your vehicle service dashboard</p>
+          <p className={styles.subtitle}>
+            Access your vehicle service dashboard
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className={styles.form}>
