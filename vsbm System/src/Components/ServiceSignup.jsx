@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import styles from './ServiceSignup.module.css';
 import {
   User,
   Mail,
@@ -11,19 +12,18 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import styles from "./ServiceSignup.module.css";
+import axios from "axios"; // ✅ ADD THIS
+import { useNavigate } from "react-router-dom"; // ✅ ADD THIS
 
 const ServiceSignup = () => {
+  const navigate = useNavigate(); // ✅ INITIALIZE HERE
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [customServiceInput, setCustomServiceInput] = useState("");
   const [customServices, setCustomServices] = useState([]);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     companyName: "",
@@ -134,11 +134,11 @@ const ServiceSignup = () => {
     try {
       setLoading(true);
       console.log("Submitting:", fullForm);
-      await axios.post("http://localhost:5000/serviceDB", fullForm);
-
+      await axios.post("http://localhost:5000/serviceDB", fullForm); // ✅ SUBMIT TO JSON-SERVER
       alert("Signup successful!");
-      navigate("/service-login");
+      navigate("/service-login"); // ✅ REDIRECT ON SUCCESS
     } catch (err) {
+      console.error(err);
       alert("Signup failed");
     } finally {
       setLoading(false);
@@ -147,13 +147,6 @@ const ServiceSignup = () => {
 
   return (
     <div className={styles.container}>
-      <video className={styles.backgroundVideo} autoPlay loop muted playsInline>
-        <source src="/Background.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-
-      <div className={styles.overlay}></div>
-
       <div className={styles.formContainer}>
         <div className={styles.formHeader}>
           <div className={styles.logoContainer}>
@@ -165,7 +158,7 @@ const ServiceSignup = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.form}>
           <div className={styles.inputWrapper}>
             <input
               type="text"
@@ -286,7 +279,6 @@ const ServiceSignup = () => {
             <Phone className={styles.inputIcon} />
           </div>
 
-          {/* Services Section */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>
               <Wrench className={styles.sectionIcon} />
@@ -342,7 +334,6 @@ const ServiceSignup = () => {
             </div>
           </div>
 
-          {/* Photo Upload */}
           <div className={styles.inputWrapper}>
             <input
               type="file"
@@ -368,7 +359,7 @@ const ServiceSignup = () => {
             <button
               type="button"
               className={styles.termsButton}
-              onClick={() => (window.location.href = "/service-login")}
+              onClick={() => alert("Navigate to service login")}
             >
               View Terms & Login
             </button>
@@ -376,7 +367,7 @@ const ServiceSignup = () => {
 
           <div className={styles.submitWrapper}>
             <button
-              type="submit"
+              onClick={handleSubmit}
               className={styles.submitButton}
               disabled={loading}
             >
@@ -387,9 +378,10 @@ const ServiceSignup = () => {
               <p className={styles.loadingText}>Submitting your info...</p>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
+
 export default ServiceSignup;
