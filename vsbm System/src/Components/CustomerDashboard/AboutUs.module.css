@@ -1,0 +1,426 @@
+.aboutPage {
+  padding: 2rem 0;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.aboutHeader {
+  background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+  border-radius: 1rem;
+  padding: 2rem;
+  color: white;
+  margin-bottom: 2rem;
+}
+
+.headerTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.headerSubtitle {
+  font-size: 1.125rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.missionSection {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.missionText {
+  color: #6b7280;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+}
+
+.valuesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.valueCard {
+  text-align: center;
+}
+
+.valueIcon {
+  padding: 1rem;
+  border-radius: 50%;
+  width: 4rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.valueIconBlue {
+  background: #dbeafe;
+}
+
+.valueIconGreen {
+  background: #dcfce7;
+}
+
+.valueIconPurple {
+  background: #e9d5ff;
+}
+
+.valueIconSvg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.valueIconBlue .valueIconSvg {
+  color: #2563eb;
+}
+
+.valueIconGreen .valueIconSvg {
+  color: #059669;
+}
+
+.valueIconPurple .valueIconSvg {
+  color: #7c3aed;
+}
+
+.valueTitle {
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+}
+
+.valueDescription {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.featuresSection {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.featuresList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.featureIcon {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+.featureIconBlue {
+  background: #dbeafe;
+}
+
+.featureIconGreen {
+  background: #dcfce7;
+}
+
+.featureIconYellow {
+  background: #fef3c7;
+}
+
+.featureIconPurple {
+  background: #e9d5ff;
+}
+
+.featureIconRed {
+  background: #fee2e2;
+}
+
+.featureIconTeal {
+  background: #ccfbf1;
+}
+
+.featureIconSvg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.featureIconBlue .featureIconSvg {
+  color: #2563eb;
+}
+
+.featureIconGreen .featureIconSvg {
+  color: #059669;
+}
+
+.featureIconYellow .featureIconSvg {
+  color: #d97706;
+}
+
+.featureIconPurple .featureIconSvg {
+  color: #7c3aed;
+}
+
+.featureIconRed .featureIconSvg {
+  color: #dc2626;
+}
+
+.featureIconTeal .featureIconSvg {
+  color: #0d9488;
+}
+
+.featureContent {
+  flex: 1;
+}
+
+.featureTitle {
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+}
+
+.featureDescription {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.timelineSection {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.timelineItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.timelineYear {
+  background: #2563eb;
+  color: white;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.timelineContent {
+  flex: 1;
+}
+
+.timelineTitle {
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+}
+
+.timelineDescription {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.teamSection {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+}
+
+.teamGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.teamCard {
+  text-align: center;
+}
+
+.teamAvatar {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.teamInitials {
+  color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.teamName {
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+}
+
+.teamRole {
+  color: #2563eb;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem 0;
+}
+
+.teamBio {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.awardsSection {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.awardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.awardCard {
+  text-align: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.awardIcon {
+  background: #fef3c7;
+  padding: 0.75rem;
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem auto;
+}
+
+.awardIconSvg {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #d97706;
+}
+
+.awardTitle {
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.awardYear {
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin: 0 0 0.25rem 0;
+}
+
+.awardOrganization {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .aboutPage {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .aboutHeader {
+    padding: 1.5rem;
+  }
+  
+  .headerTitle {
+    font-size: 1.5rem;
+  }
+  
+  .headerSubtitle {
+    font-size: 1rem;
+  }
+  
+  .missionSection,
+  .featuresSection,
+  .timelineSection,
+  .teamSection,
+  .awardsSection {
+    padding: 1.5rem;
+  }
+  
+  .valuesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .teamGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .awardsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}

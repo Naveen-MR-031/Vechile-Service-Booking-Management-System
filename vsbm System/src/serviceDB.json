@@ -2,13 +2,13 @@
   "serviceDB": [
     {
       "id": "c00c",
-      "companyName": "zzzz",
+      "companyName": "AutoFix Pro Services",
       "username": "dhinaa",
       "email": "loosuu@gmail.com",
       "password": "123456789",
       "confirmPassword": "123456789",
       "mapLink": "https://maps.app.goo.gl/UBvBYXgtaMDLJaNS7",
-      "address": "asdfghjkl",
+      "address": "123 Main Street, Downtown District, City 12345",
       "phone": "1234567890",
       "landline": "0987654321",
       "services": {
@@ -36,6 +36,82 @@
       },
       "photos": [
         "Screenshot 2024-09-25 173606.png"
+      ]
+    },
+    {
+      "id": "c00d",
+      "companyName": "QuickFix Motors",
+      "username": "rajesh",
+      "email": "quickfix@gmail.com",
+      "password": "123456789",
+      "confirmPassword": "123456789",
+      "mapLink": "https://maps.app.goo.gl/XYZ123456789",
+      "address": "456 Oak Avenue, North Side, City 12346",
+      "phone": "9876543210",
+      "landline": "0123456789",
+      "services": {
+        "vehicleTypes": {
+          "car": true,
+          "bike": false,
+          "truck": true,
+          "bus": false,
+          "auto": true
+        },
+        "serviceTypes": {
+          "general": true,
+          "water": false,
+          "oil": true,
+          "tire": false,
+          "battery": true,
+          "detailing": true,
+          "engine": true,
+          "paint": false,
+          "ac": true,
+          "polishing": false,
+          "denting": true,
+          "towing": false
+        }
+      },
+      "photos": [
+        "quickfix-shop.jpg"
+      ]
+    },
+    {
+      "id": "c00e",
+      "companyName": "Precision Auto Care",
+      "username": "kumar",
+      "email": "precision@gmail.com",
+      "password": "123456789",
+      "confirmPassword": "123456789",
+      "mapLink": "https://maps.app.goo.gl/ABC987654321",
+      "address": "789 Pine Road, West End, City 12347",
+      "phone": "5555666777",
+      "landline": "0444555666",
+      "services": {
+        "vehicleTypes": {
+          "car": true,
+          "bike": true,
+          "truck": false,
+          "bus": true,
+          "auto": false
+        },
+        "serviceTypes": {
+          "general": false,
+          "water": true,
+          "oil": true,
+          "tire": true,
+          "battery": true,
+          "detailing": true,
+          "engine": false,
+          "paint": true,
+          "ac": false,
+          "polishing": true,
+          "denting": false,
+          "towing": true
+        }
+      },
+      "photos": [
+        "precision-auto.jpg"
       ]
     }
   ]

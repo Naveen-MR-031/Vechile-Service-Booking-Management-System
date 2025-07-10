@@ -6,6 +6,7 @@ import ConsumerSignup from "./Components/ConsumerSignup";
 import NotFound from "./Components/NotFound";
 import ServiceLogin from "./Components/ServiceLogin";
 import ServiceSignup from "./Components/ServiceSignup";
+import CustomerDashboard from "./Components/CustomerDashboard/CustomerDashboard";
 
 function App() {
   return (
@@ -14,8 +15,9 @@ function App() {
         <Route path="/" element={<FrontPage />} />
         <Route path="/consumer-login" element={<ConsumerLogin />} />
         <Route path="/consumer-signup" element={<ConsumerSignup />} />
-        <Route path="/service-login" element={<ServiceLogin />} />         
-        <Route path="/service-signup" element={<ServiceSignup />} />      
+        <Route path="/service-login" element={<ServiceLogin />} />
+        <Route path="/service-signup" element={<ServiceSignup />} />
+        <Route path="/customer-dashboard" element={<CustomerDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
