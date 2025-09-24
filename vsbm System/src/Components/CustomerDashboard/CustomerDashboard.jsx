@@ -42,7 +42,7 @@ const CustomerDashboard = () => {
             <div className={styles.footerSection}>
               <div className={styles.footerBrand}>
                 <div className={styles.footerBrandIcon}>
-                  <SettingsIcon className={styles.footerBrandIconSvg} /> {/* ✅ renamed usage */}
+                  <SettingsIcon className={styles.footerBrandIconSvg} /> 
                 </div>
                 <span className={styles.footerBrandText}>Vechile Service Hub</span>
               </div>

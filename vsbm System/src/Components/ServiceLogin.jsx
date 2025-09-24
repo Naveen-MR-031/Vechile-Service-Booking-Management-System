@@ -27,7 +27,7 @@ const ServiceLogin = () => {
 
       if (user) {
         alert("Login successful!");
-        navigate('/service-dashboard');        
+        navigate("/service-dashboard");
       } else {
         alert("Invalid credentials");
       }
@@ -43,7 +43,6 @@ const ServiceLogin = () => {
 
   return (
     <div className={styles.pageWrapper}>
-    
       <div className={styles.blobTopLeft}></div>
       <div className={styles.blobBottomRight}></div>
 

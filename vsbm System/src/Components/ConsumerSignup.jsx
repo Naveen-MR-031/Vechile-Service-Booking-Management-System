@@ -87,7 +87,7 @@ const ConsumerSignup = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSignup}>
           <div className="space-y-4">
-            {/* Username Field */}
+            
             <div>
               <label htmlFor="username" className={styles.label}>Username</label>
               <div className={styles.inputWrapper}>
@@ -105,7 +105,6 @@ const ConsumerSignup = () => {
               </div>
             </div>
 
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className={styles.label}>Email Address</label>
               <div className={styles.inputWrapper}>
@@ -123,7 +122,6 @@ const ConsumerSignup = () => {
               </div>
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className={styles.label}>Password</label>
               <div className={styles.inputWrapper}>
@@ -147,7 +145,6 @@ const ConsumerSignup = () => {
                 </button>
               </div>
 
-              {/* Password Requirements */}
               {form.password && (
                 <div className="mt-2 space-y-1">
                   <div className={styles.validationItem}>
@@ -170,7 +167,6 @@ const ConsumerSignup = () => {
               )}
             </div>
 
-            {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className={styles.label}>Confirm Password</label>
               <div className={styles.inputWrapper}>

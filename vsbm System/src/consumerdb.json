@@ -2,21 +2,21 @@
   "consumers": [
     {
       "id": "50df",
-      "username": "vishnu",
+      "username": "vishuuu",
       "email": "22it061@drngpit.ac.in",
       "password": "Aa123456"
-    },
-    {
-      "id": "cd79",
-      "username": "naveen",
-      "email": "loosukoothi@gmail.com",
-      "password": "1234567Aa"
     },
     {
       "id": "4931",
       "username": "Naveen M R",
       "email": "naveenn@gmail.com",
       "password": "123456Aa"
+    },
+    {
+      "id": "fef3",
+      "username": "yokesh",
+      "email": "yokesh@gmail.com",
+      "password": "Aa123456"
     }
   ]
 }
