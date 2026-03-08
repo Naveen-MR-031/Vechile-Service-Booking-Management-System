@@ -1,0 +1,301 @@
+.page {
+    min-height: 100vh;
+    background: var(--background);
+    color: var(--text);
+}
+
+/* Hero Section */
+.hero {
+    position: relative;
+    padding: 160px 24px 60px;
+    text-align: center;
+    overflow: hidden;
+}
+
+.heroBackground {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.glow1 {
+    position: absolute;
+    top: -10%;
+    left: 40%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 107, 53, 0.12) 0%, transparent 70%);
+    filter: blur(60px);
+}
+
+.glow2 {
+    position: absolute;
+    top: 30%;
+    right: 30%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+    filter: blur(60px);
+}
+
+.heroContent {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 100px;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 24px;
+}
+
+.heroContent h1 {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 16px;
+}
+
+.gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, #FF9F6B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.heroContent p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+/* Container */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* Info Section */
+.infoSection {
+    padding: 40px 24px 60px;
+}
+
+.infoGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.infoCard {
+    text-align: center;
+    padding: 32px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.infoCard:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+}
+
+.infoIcon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: rgba(255, 107, 53, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    margin: 0 auto 16px;
+}
+
+.infoCard h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.infoValue {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.infoDesc {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Main Section */
+.mainSection {
+    padding: 60px 24px 80px;
+}
+
+.mainGrid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 32px;
+    align-items: start;
+}
+
+/* Form Card */
+.formCard {
+    padding: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+}
+
+.formCard h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.5rem;
+    margin-bottom: 28px;
+}
+
+.formCard h2 svg {
+    color: var(--primary);
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+
+.formGroup textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.formGroup textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.formGroup textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* FAQ Card */
+.faqCard {
+    padding: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+}
+
+.faqCard h2 {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+}
+
+.faqList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.faqItem {
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.faqItem:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.faqItem h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.faqItem h4 svg {
+    color: var(--success);
+    flex-shrink: 0;
+}
+
+.faqItem p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    padding-left: 28px;
+}
+
+/* Footer */
+.footer {
+    padding: 32px 24px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+}
+
+.footerBrand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.footer p {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 900px) {
+    .mainGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .infoGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,443 @@
+/* Invoice View Styles */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.invoiceWrapper {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.actions {
+    position: sticky;
+    top: 0;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 16px 16px 0 0;
+    z-index: 10;
+}
+
+.actionBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.2s;
+}
+
+.actionBtn:hover {
+    background: #e9ecef;
+}
+
+.closeBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    color: #495057;
+    transition: all 0.2s;
+}
+
+.closeBtn:hover {
+    background: #f8d7da;
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+/* Invoice Content */
+.invoice {
+    padding: 40px;
+    color: #212529;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.brandSection {
+    flex: 1;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logoIcon {
+    font-size: 2rem;
+}
+
+.brandName {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0;
+    line-height: 1;
+}
+
+.brandName span {
+    color: #ff4757;
+}
+
+.brandTagline {
+    font-size: 0.75rem;
+    color: #868e96;
+    margin: 2px 0 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.invoiceMeta {
+    text-align: right;
+}
+
+.invoiceTitle {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #1a1a2e;
+    margin: 0 0 12px;
+    letter-spacing: 2px;
+}
+
+.metaRow {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-bottom: 4px;
+    font-size: 0.875rem;
+}
+
+.metaRow span {
+    color: #868e96;
+}
+
+.metaRow strong {
+    color: #212529;
+    min-width: 100px;
+    text-align: right;
+}
+
+.statusBadge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.paid {
+    background: #d4edda;
+    color: #155724;
+}
+
+.unpaid {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.divider {
+    height: 2px;
+    background: linear-gradient(to right, #ff4757, #1a1a2e);
+    margin: 20px 0;
+    border-radius: 2px;
+}
+
+/* Parties */
+.parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 20px;
+}
+
+.party h4 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #868e96;
+    margin: 0 0 8px;
+}
+
+.partyName {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0 0 4px !important;
+}
+
+.party p {
+    font-size: 0.85rem;
+    color: #495057;
+    margin: 0 0 2px;
+}
+
+/* Vehicle Info */
+.vehicleInfo {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+
+.vehicleInfo h4 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #868e96;
+    margin: 0 0 10px;
+}
+
+.vehicleGrid {
+    display: flex;
+    gap: 32px;
+}
+
+.vehicleGrid div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vehicleGrid span {
+    font-size: 0.75rem;
+    color: #868e96;
+}
+
+.vehicleGrid strong {
+    font-size: 0.9rem;
+    color: #212529;
+}
+
+/* Items Table */
+.itemsTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.itemsTable th {
+    background: #1a1a2e;
+    color: white;
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.itemsTable th:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+.itemsTable th:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+.itemsTable td {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #212529;
+}
+
+.itemsTable tbody tr:last-child td {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.itemsTable tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* Totals */
+.totalsSection {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.totalsRight {
+    width: 280px;
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.totalRow.discount {
+    color: #28a745;
+}
+
+.totalRow.grandTotal {
+    border-top: 2px solid #1a1a2e;
+    padding-top: 12px;
+    margin-top: 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1a1a2e;
+}
+
+/* Footer */
+.footer {
+    margin-top: 24px;
+}
+
+.footerNote {
+    margin-bottom: 20px;
+}
+
+.footerNote p {
+    font-size: 0.8rem;
+    color: #495057;
+    margin: 0 0 4px;
+}
+
+.footerNote ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footerNote li {
+    font-size: 0.75rem;
+    color: #868e96;
+    padding: 2px 0;
+}
+
+.footerNote li::before {
+    content: '•';
+    margin-right: 8px;
+    color: #ff4757;
+}
+
+.footerBrand {
+    text-align: center;
+    padding-top: 16px;
+    border-top: 1px solid #e9ecef;
+}
+
+.footerBrand p {
+    font-size: 0.85rem;
+    color: #495057;
+    margin: 0;
+    font-weight: 600;
+}
+
+.footerContact {
+    font-size: 0.75rem !important;
+    color: #868e96 !important;
+    font-weight: 400 !important;
+    margin-top: 4px !important;
+}
+
+/* Print Styles */
+@media print {
+    .overlay {
+        position: static;
+        background: none;
+        backdrop-filter: none;
+        padding: 0;
+    }
+
+    .invoiceWrapper {
+        max-height: none;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .actions {
+        display: none !important;
+    }
+
+    .invoice {
+        padding: 20px;
+    }
+
+    .divider {
+        background: #333 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .itemsTable th {
+        background: #333 !important;
+        color: white !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .statusBadge {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+}
+
+@media (max-width: 600px) {
+    .invoice {
+        padding: 20px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .invoiceMeta {
+        text-align: left;
+    }
+
+    .metaRow {
+        justify-content: flex-start;
+    }
+
+    .parties {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .vehicleGrid {
+        flex-wrap: wrap;
+    }
+}

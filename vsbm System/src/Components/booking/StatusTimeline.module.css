@@ -1,0 +1,110 @@
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.progressBar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.progressTrack {
+    height: 6px;
+    background: var(--muted);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--gradient-accent);
+    border-radius: var(--radius-full);
+    transition: width 0.8s ease;
+}
+
+.progressLabel {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-align: right;
+}
+
+.steps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+}
+
+.steps::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 14px;
+    bottom: 14px;
+    width: 2px;
+    background: var(--border);
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    position: relative;
+    z-index: 1;
+}
+
+.dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.step.done .dot {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+.step.current .dot {
+    background: var(--secondary);
+    border-color: var(--secondary);
+    color: white;
+}
+
+.stepInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stepLabel {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.step.done .stepLabel {
+    color: var(--text-secondary);
+}
+
+.step.current .stepLabel {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.stepTime {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}

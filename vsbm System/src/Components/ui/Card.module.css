@@ -1,0 +1,95 @@
+/* ============================================
+   Card Component - Superlist Inspired Premium Styling
+   ============================================ */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    transition: all var(--transition-base);
+    position: relative;
+}
+
+/* Variants */
+.default {
+    background: var(--surface);
+}
+
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+}
+
+.elevated {
+    background: var(--surface-elevated);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Interactive Card */
+.interactive {
+    cursor: pointer;
+}
+
+.interactive:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.interactive:hover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, var(--primary-glow) 0%, transparent 50%);
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+/* Glow variant */
+.glow {
+    border-color: rgba(255, 107, 53, 0.2);
+}
+
+.glow:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 30px -10px var(--primary-glow);
+}
+
+/* Card Parts */
+.header {
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border);
+}
+
+.content {
+    padding: var(--space-6);
+}
+
+.footer {
+    padding: var(--space-6);
+    border-top: 1px solid var(--border);
+    background: var(--muted);
+}
+
+.title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.description {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
+}
+
+/* Compact padding */
+.compact .header,
+.compact .content,
+.compact .footer {
+    padding: var(--space-4);
+}
