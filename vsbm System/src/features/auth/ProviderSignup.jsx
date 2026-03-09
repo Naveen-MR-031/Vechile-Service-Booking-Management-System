@@ -97,7 +97,8 @@ const ProviderSignup = () => {
             });
 
             if (result.success) {
-                navigate('/provider/dashboard');
+                toast.success('Account created successfully! Please log in to verify your email.');
+                setTimeout(() => navigate('/provider/login'), 1500);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed');

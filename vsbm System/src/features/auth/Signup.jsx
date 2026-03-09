@@ -84,7 +84,8 @@ const Signup = () => {
             });
 
             if (result.success) {
-                navigate('/customer/dashboard');
+                toast.success('Account created successfully! Please log in to verify your email.');
+                setTimeout(() => navigate('/login'), 1500);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed');

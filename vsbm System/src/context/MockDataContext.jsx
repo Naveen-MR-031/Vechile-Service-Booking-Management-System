@@ -416,38 +416,14 @@ export const MockDataProvider = ({ children }) => {
 
     const registerCustomer = async (userData) => {
         const res = await authAPI.register({ ...userData, userType: 'customer' });
-        const { token, user } = res.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        const userObj = {
-            ...user,
-            customer_id: user.id,
-            first_name: user.name?.split(' ')[0] || user.name,
-            last_name: user.name?.split(' ').slice(1).join(' ') || '',
-            role: 'customer',
-            registration_date: new Date().toISOString()
-        };
-        setCurrentUser(userObj);
-        await loadCustomerData(userObj);
-        return { success: true, user: userObj };
+        const { user } = res.data;
+        return { success: true, user };
     };
 
     const registerProvider = async (userData) => {
         const res = await authAPI.register({ ...userData, userType: 'serviceProvider' });
-        const { token, user } = res.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        const userObj = {
-            ...user,
-            provider_id: user.id,
-            company_name: user.businessName || user.name,
-            role: 'provider',
-        };
-        setCurrentUser(userObj);
-        await loadProviderData(userObj);
-        return { success: true, user: userObj };
+        const { user } = res.data;
+        return { success: true, user };
     };
 
     const logout = () => {
@@ -462,6 +438,10 @@ export const MockDataProvider = ({ children }) => {
         setProviders([]);
         setDiscounts([]);
         setReviews([]);
+        toast.success('Logged out successfully');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 500);
     };
 
     // ==================== GETTERS (from cache) ====================

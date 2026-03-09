@@ -50,6 +50,13 @@ const CustomerLogin = () => {
             setOtp(['', '', '', '', '', '']);
         } catch (err) {
             const msg = err.response?.data?.message || 'Invalid email or password';
+
+            if (err.response?.status === 404 || msg.toLowerCase().includes('not found')) {
+                toast.error('Account not found. Redirecting to registration...');
+                setTimeout(() => navigate('/signup'), 1500);
+                return;
+            }
+
             toast.error(msg);
             if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('credential')) {
                 setErrors({ password: msg });

@@ -132,7 +132,7 @@ exports.sendOTPAfterLogin = async (req, res) => {
         }).select('+password');
 
         if (!user) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password' });
+            return res.status(404).json({ success: false, message: 'Account not found. Please create an account.' });
         }
 
         // Verify password

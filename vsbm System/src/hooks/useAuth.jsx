@@ -44,15 +44,7 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData) => {
         try {
             const response = await authAPI.register(userData);
-            const { token, user: newUser } = response.data;
-
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(newUser));
-
-            setUser(newUser);
-            setIsAuthenticated(true);
-            toast.success('Account created successfully!');
-
+            const { user: newUser } = response.data;
             return { success: true, user: newUser };
         } catch (error) {
             const message = error.response?.data?.message || 'Registration failed';
@@ -67,6 +59,9 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setIsAuthenticated(false);
         toast.success('Logged out successfully');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 500);
     };
 
     const updateUser = (updates) => {
