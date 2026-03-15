@@ -28,6 +28,7 @@ const ServiceDashboard = () => {
     const [issueForm, setIssueForm] = useState({ issue_description: '', severity: 'Moderate', issue_type: 'Mechanical', estimated_additional_cost: 0 });
     const [discountForm, setDiscountForm] = useState({ code: '', type: 'Percentage', value: 10, min_order: 0, max_discount: 0, description: '', valid_from: '', valid_until: '' });
     const [showAddService, setShowAddService] = useState(false);
+    const [editingServiceId, setEditingServiceId] = useState(null);
     const [serviceForm, setServiceForm] = useState({ service_name: '', service_description: '', base_price: 0, estimated_duration: 60, service_category_id: 1, price_type: 'Fixed' });
 
     // Accept Modal state
@@ -46,7 +47,7 @@ const ServiceDashboard = () => {
         getCommunicationsByBookingId, getStatusInfo, getStatusHistoryByBookingId,
         getDiscountsByProviderId, getReviewsByProviderId, getBusinessHoursByProviderId,
         bookingStatuses, serviceCategories, bookings,
-        updateBookingStatus, addIssue, addService, deleteService,
+        updateBookingStatus, addIssue, addService, deleteService, updateService,
         createDiscount, deleteDiscount, sendMessage
     } = useMockData();
 
@@ -116,13 +117,34 @@ const ServiceDashboard = () => {
         setIssueForm({ issue_description: '', severity: 'Moderate', issue_type: 'Mechanical', estimated_additional_cost: 0 });
     };
 
-    const handleAddService = async (e) => {
+    const handleSaveService = async (e) => {
         e.preventDefault();
         if (!serviceForm.service_name || !serviceForm.base_price) { toast.error('Name and price are required'); return; }
-        await addService(serviceForm);
-        toast.success('Service added!');
+        
+        if (editingServiceId) {
+            await updateService(editingServiceId, serviceForm);
+            toast.success('Service updated!');
+        } else {
+            await addService(serviceForm);
+            toast.success('Service added!');
+        }
+        
         setShowAddService(false);
+        setEditingServiceId(null);
         setServiceForm({ service_name: '', service_description: '', base_price: 0, estimated_duration: 60, service_category_id: 1, price_type: 'Fixed' });
+    };
+
+    const handleEditServiceClick = (service) => {
+        setServiceForm({
+            service_name: service.service_name,
+            service_description: service.service_description,
+            base_price: service.base_price,
+            estimated_duration: service.estimated_duration,
+            service_category_id: serviceCategories.find(c => c.category_name === service.category_name)?.category_id || 1,
+            price_type: service.price_type || 'Fixed'
+        });
+        setEditingServiceId(service.service_id);
+        setShowAddService(true);
     };
 
     const handleAddDiscount = async (e) => {
@@ -439,14 +461,14 @@ const ServiceDashboard = () => {
                         <motion.div key="services" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={styles.tabContent}>
                             <div className={styles.pageHeader}>
                                 <h2>My Services</h2>
-                                <Button onClick={() => setShowAddService(true)}>
+                                <Button onClick={() => { setEditingServiceId(null); setServiceForm({ service_name: '', service_description: '', base_price: 0, estimated_duration: 60, service_category_id: 1, price_type: 'Fixed' }); setShowAddService(true); }}>
                                     <Plus size={16} /> Add Service
                                 </Button>
                             </div>
 
                             {showAddService && (
-                                <form onSubmit={handleAddService} className={styles.formCard}>
-                                    <h4>Add New Service</h4>
+                                <form onSubmit={handleSaveService} className={styles.formCard}>
+                                    <h4>{editingServiceId ? 'Edit Service' : 'Add New Service'}</h4>
                                     <div className={styles.formRow}>
                                         <div className={styles.formGroup}>
                                             <label>Service Name *</label>
@@ -474,8 +496,8 @@ const ServiceDashboard = () => {
                                         </div>
                                     </div>
                                     <div className={styles.formActions}>
-                                        <Button type="submit" size="sm">Save Service</Button>
-                                        <Button type="button" size="sm" variant="outline" onClick={() => setShowAddService(false)}>Cancel</Button>
+                                        <Button type="submit" size="sm">{editingServiceId ? 'Update Service' : 'Save Service'}</Button>
+                                        <Button type="button" size="sm" variant="outline" onClick={() => { setShowAddService(false); setEditingServiceId(null); }}>Cancel</Button>
                                     </div>
                                 </form>
                             )}
@@ -506,9 +528,14 @@ const ServiceDashboard = () => {
                                                         {cat && <span>{cat.category_name}</span>}
                                                     </div>
                                                 </div>
-                                                <button className={styles.deleteBtn} onClick={() => { deleteService(service.service_id); toast.success('Service removed'); }}>
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                <div style={{ display: 'flex', gap: '8px', zIndex: 2 }}>
+                                                    <button className={styles.editBtn} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }} onClick={() => handleEditServiceClick(service)}>
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button className={styles.deleteBtn} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }} onClick={() => { deleteService(service.service_id); toast.success('Service removed'); }}>
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         );
                                     })

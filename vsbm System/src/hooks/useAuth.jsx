@@ -70,6 +70,11 @@ export const AuthProvider = ({ children }) => {
         setUser(updatedUser);
     };
 
+    const sendOTP = async (email, forSignup = false, name = '') => {
+        const res = await authAPI.sendOTP({ email, forSignup, name });
+        return res.data;
+    };
+
     const value = {
         user,
         loading,
@@ -78,6 +83,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateUser,
+        sendOTP,
     };
 
     return (

@@ -38,16 +38,16 @@
 }
 
 .logoLarge {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
     border-radius: var(--radius-2xl);
-    background: var(--gradient-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     margin-bottom: var(--space-8);
-    box-shadow: 0 0 40px -10px rgba(255, 107, 53, 0.5);
+    box-shadow: 0 0 40px -10px rgba(239, 68, 68, 0.3);
+    overflow: hidden;
 }
 
 .visualTitle {

@@ -42,8 +42,8 @@ const Login = () => {
         setIsLoading(true);
         setErrors({});
         try {
-            await sendOTPAfterLogin(email, password);
-            toast.success('Password verified! OTP sent to your email.');
+            const result = await sendOTPAfterLogin(email, password);
+            toast.success('OTP sent to your email!');
             setStep('otp');
             setCountdown(60);
             setOtp(['', '', '', '', '', '']);
@@ -70,8 +70,8 @@ const Login = () => {
     const handleResendOTP = async () => {
         setIsLoading(true);
         try {
-            await sendOTPAfterLogin(email, password);
-            toast.success('OTP resent to your email!');
+            const result = await sendOTPAfterLogin(email, password);
+            toast.success('New OTP sent to your email!');
             setCountdown(60);
             setOtp(['', '', '', '', '', '']);
         } catch (err) {
@@ -146,7 +146,7 @@ const Login = () => {
             >
                 <div className={styles.visualContent}>
                     <div className={styles.logoLarge}>
-                        <Car size={48} />
+                        <img src="/fos-icon.png" alt="FastOnService" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }} />
                     </div>
                     <h1 className={styles.visualTitle}>
                         Welcome to<br />

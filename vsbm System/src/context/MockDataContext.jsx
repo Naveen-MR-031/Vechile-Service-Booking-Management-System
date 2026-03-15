@@ -71,12 +71,51 @@ const FRONTEND_TO_BACKEND_STATUS = Object.fromEntries(
     Object.entries(BACKEND_TO_FRONTEND_STATUS).map(([k, v]) => [v, k])
 );
 
+// Random auto shop / garage stock photos for providers without custom images
+const SHOP_PHOTOS = [
+    'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1606577924006-27d39b132ae2?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1542362567-b07e54358753?w=600&h=400&fit=crop',
+];
+let _providerIdx = 0;
+const _providerPhotoMap = {};
+const getShopPhotos = (id) => {
+    if (_providerPhotoMap[id]) return _providerPhotoMap[id];
+    const offset = (_providerIdx * 3) % SHOP_PHOTOS.length;
+    _providerIdx++;
+    const photos = [
+        SHOP_PHOTOS[offset % SHOP_PHOTOS.length],
+        SHOP_PHOTOS[(offset + 1) % SHOP_PHOTOS.length],
+        SHOP_PHOTOS[(offset + 2) % SHOP_PHOTOS.length],
+    ];
+    _providerPhotoMap[id] = photos;
+    return photos;
+};
+
 // --- Transform backend data to match old frontend field names ---
-const transformProvider = (p) => ({
+const transformProvider = (p) => {
+    const fallbackPhotos = getShopPhotos(p._id);
+    return {
     provider_id: p._id,
     company_name: p.businessName || p.name,
-    business_logo: p.businessLogo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.businessName || p.name || 'SP')}&size=100&background=1a1a2e&color=ff4757&bold=true&format=svg`,
-    cover_image: p.businessLogo || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.businessName || p.name || 'SP')}&size=600&background=1a1a2e&color=ff4757&bold=true&length=1&format=svg`,
+    business_logo: p.businessLogo || fallbackPhotos[0],
+    cover_image: p.businessLogo || fallbackPhotos[0],
+    gallery: p.businessLogo ? [p.businessLogo] : fallbackPhotos,
     email: p.email,
     phone: p.phone,
     address: [p.address?.street, p.address?.city, p.address?.state].filter(Boolean).join(', ') || '',
@@ -89,7 +128,7 @@ const transformProvider = (p) => ({
     total_employees: 0,
     verification_status: p.isVerified ? 'Verified' : 'Pending',
     featured_provider: true,
-});
+};};
 
 const transformService = (s) => ({
     service_id: s._id,
@@ -378,13 +417,22 @@ export const MockDataProvider = ({ children }) => {
         return res.data; // { success, message, userType, userName }
     };
 
-    const sendOTP = async (email) => {
-        const res = await authAPI.sendOTP({ email });
+    const sendOTP = async (email, forSignup = false, name = '') => {
+        const res = await authAPI.sendOTP({ email, forSignup, name });
         return res.data;
     };
 
     const loginWithOTP = async (email, otp, userType) => {
-        const res = await authAPI.loginWithOTP({ email, otp });
+        // Get user's current location
+        let location = null;
+        try {
+            const pos = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, enableHighAccuracy: true });
+            });
+            location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        } catch (e) { /* location optional */ }
+
+        const res = await authAPI.loginWithOTP({ email, otp, location });
         const { token, user } = res.data;
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
@@ -416,14 +464,36 @@ export const MockDataProvider = ({ children }) => {
 
     const registerCustomer = async (userData) => {
         const res = await authAPI.register({ ...userData, userType: 'customer' });
-        const { user } = res.data;
-        return { success: true, user };
+        const { token, user } = res.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        const userObj = {
+            ...user,
+            customer_id: user.id,
+            first_name: user.name?.split(' ')[0] || user.name,
+            last_name: user.name?.split(' ').slice(1).join(' ') || '',
+            role: 'customer',
+            registration_date: new Date().toISOString()
+        };
+        setCurrentUser(userObj);
+        await loadCustomerData(userObj);
+        return { success: true, user: userObj };
     };
 
     const registerProvider = async (userData) => {
         const res = await authAPI.register({ ...userData, userType: 'serviceProvider' });
-        const { user } = res.data;
-        return { success: true, user };
+        const { token, user } = res.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        const userObj = {
+            ...user,
+            provider_id: user.id,
+            company_name: user.businessName || user.name,
+            role: 'provider',
+        };
+        setCurrentUser(userObj);
+        await loadProviderData(userObj);
+        return { success: true, user: userObj };
     };
 
     const logout = () => {
@@ -647,6 +717,25 @@ export const MockDataProvider = ({ children }) => {
         }
     };
 
+    const updateService = async (serviceId, serviceData) => {
+        try {
+            const payload = {
+                name: serviceData.service_name,
+                description: serviceData.service_description || serviceData.service_name,
+                category: serviceCategories.find(c => c.category_id === serviceData.service_category_id)?.category_name || 'Other',
+                basePrice: serviceData.base_price,
+                estimatedDuration: `${Math.round(serviceData.estimated_duration / 60)} hours`,
+                vehicleTypes: ['Car'],
+            };
+            const res = await providerAPI.updateService(serviceId, payload);
+            setServices(prev => prev.map(s => s.service_id === serviceId ? transformService(res.data.data) : s));
+            return res.data;
+        } catch (err) {
+            console.error('Update service error:', err);
+            throw err;
+        }
+    };
+
     const createDiscount = async (discountData) => {
         try {
             const payload = {
@@ -683,6 +772,10 @@ export const MockDataProvider = ({ children }) => {
                 preferredTimeSlot: bookingData.preferred_time || bookingData.booking_type,
                 customerNotes: bookingData.special_instructions || bookingData.description,
                 estimatedCost: bookingData.total_amount,
+                serviceType: bookingData.services?.[0]?.service_name || bookingData.serviceType || 'General Service',
+                vehicleDetails: bookingData.vehicleDetails || undefined,
+                isEmergency: bookingData.isEmergency || false,
+                customerLocation: bookingData.customerLocation || undefined,
             };
             const res = await customerAPI.createBooking(payload);
             const newBooking = transformBooking(res.data.data);
@@ -736,6 +829,46 @@ export const MockDataProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = async (profileData) => {
+        try {
+            // Combine first_name/last_name into name if needed
+            const payload = { ...profileData };
+            if (payload.first_name !== undefined || payload.last_name !== undefined) {
+                payload.name = [payload.first_name, payload.last_name].filter(Boolean).join(' ');
+                delete payload.first_name;
+                delete payload.last_name;
+            }
+
+            if (currentUser?.role === 'provider' || currentUser?.userType === 'serviceProvider') {
+                const res = await providerAPI.updateProfile(payload);
+                const updated = res.data.data;
+                const nameParts = (updated.name || '').split(' ');
+                setCurrentUser(prev => ({
+                    ...prev,
+                    ...updated,
+                    first_name: nameParts[0] || '',
+                    last_name: nameParts.slice(1).join(' ') || '',
+                    company_name: updated.businessName || updated.name,
+                }));
+                return res.data;
+            } else {
+                const res = await customerAPI.updateProfile(payload);
+                const updated = res.data.data;
+                const nameParts = (updated.name || '').split(' ');
+                setCurrentUser(prev => ({
+                    ...prev,
+                    ...updated,
+                    first_name: nameParts[0] || '',
+                    last_name: nameParts.slice(1).join(' ') || '',
+                }));
+                return res.data;
+            }
+        } catch (err) {
+            console.error('Update profile error:', err);
+            throw err;
+        }
+    };
+
     const value = {
         // State
         currentUser,
@@ -784,10 +917,12 @@ export const MockDataProvider = ({ children }) => {
         addIssue,
         addService,
         deleteService,
+        updateService,
         createBooking,
         createDiscount,
         deleteDiscount,
         fetchCustomerDiscounts,
+        updateProfile,
         getNearbyProviders,
     };
 

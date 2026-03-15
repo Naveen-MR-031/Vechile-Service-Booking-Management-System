@@ -385,7 +385,7 @@ const HomePage = () => {
                 <div className={styles.container}>
                     <div className={styles.footerGrid}>
                         <div className={styles.footerBrand}>
-                            <h3>🚗 VSBM</h3>
+                            <h3><img src="/fos-logo.png" alt="FOS" style={{ height: 24, width: 'auto', objectFit: 'contain', verticalAlign: 'middle', marginRight: 8 }} />FastOnService</h3>
                             <p>Smart Vehicle Service Booking — your one-stop platform for hassle-free vehicle maintenance.</p>
                         </div>
                         <div className={styles.footerLinks}>

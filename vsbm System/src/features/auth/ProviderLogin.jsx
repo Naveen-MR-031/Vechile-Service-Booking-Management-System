@@ -42,8 +42,8 @@ const ProviderLogin = () => {
         setIsLoading(true);
         setErrors({});
         try {
-            await sendOTPAfterLogin(email, password);
-            toast.success('Password verified! OTP sent to your email.');
+            const result = await sendOTPAfterLogin(email, password);
+            toast.success('OTP sent to your email!');
             setStep('otp');
             setCountdown(60);
             setOtp(['', '', '', '', '', '']);
@@ -70,8 +70,8 @@ const ProviderLogin = () => {
     const handleResendOTP = async () => {
         setIsLoading(true);
         try {
-            await sendOTPAfterLogin(email, password);
-            toast.success('OTP resent to your email!');
+            const result = await sendOTPAfterLogin(email, password);
+            toast.success('New OTP sent to your email!');
             setCountdown(60);
             setOtp(['', '', '', '', '', '']);
         } catch (err) {
@@ -138,7 +138,7 @@ const ProviderLogin = () => {
             {/* Visual Side */}
             <motion.div className={styles.visualSide} initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
                 <div className={styles.visualContent}>
-                    <div className={styles.logoLarge}><Wrench size={48} /></div>
+                    <div className={styles.logoLarge}><img src="/fos-icon.png" alt="FastOnService" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }} /></div>
                     <h1 className={styles.visualTitle}>
                         Partner Portal<br /><span className="gradient-text">FastOnService</span>
                     </h1>

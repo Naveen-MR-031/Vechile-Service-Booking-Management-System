@@ -14,9 +14,21 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, userType, phone, businessName, licenseNumber, gstNumber, address, description } = req.body;
+        const { name, email, password, userType, phone, businessName, licenseNumber, gstNumber, address, description, otp, businessLogo } = req.body;
 
-        const existingUser = await User.findOne({ email });
+        if (!otp) {
+            return res.status(400).json({ success: false, message: 'OTP is required' });
+        }
+
+        const otpRecord = await OTP.findOne({ email: email.toLowerCase(), otp });
+        if (!otpRecord) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+        }
+
+        // Clean up OTP after verification
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(409).json({ success: false, message: 'Email already registered' });
         }
@@ -28,9 +40,23 @@ exports.register = async (req, res) => {
             }
         }
 
+        // Normalize address: if string, convert to object
+        let normalizedAddress = address;
+        if (typeof address === 'string' && address.trim()) {
+            const parts = address.split(',').map(s => s.trim());
+            normalizedAddress = {
+                street: parts[0] || '',
+                city: parts[1] || '',
+                state: parts[2] || '',
+                zipCode: parts[3] || ''
+            };
+        }
+
         const user = await User.create({
             name, email, password, userType, phone,
-            businessName, licenseNumber, gstNumber, address, description
+            businessName, licenseNumber, gstNumber,
+            address: normalizedAddress || undefined,
+            description, businessLogo
         });
 
         const token = generateToken(user._id);
@@ -162,9 +188,13 @@ exports.sendOTPAfterLogin = async (req, res) => {
         await OTP.create({ email: user.email.toLowerCase(), otp, purpose: 'verification' });
 
         // Send OTP via Resend email
-        await sendOTPEmail(user.email, otp, user.name);
-
-        console.log(`📧 OTP sent to ${user.email} (password verified)`);
+        try {
+            await sendOTPEmail(user.email, otp, user.name);
+            console.log(`📧 OTP sent to ${user.email} (password verified)`);
+        } catch (emailErr) {
+            console.error(`❌ Email send failed for ${user.email}:`, emailErr.message);
+            return res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
+        }
 
         res.json({
             success: true,
@@ -178,23 +208,29 @@ exports.sendOTPAfterLogin = async (req, res) => {
     }
 };
 
-// @desc    Send OTP (email-only, no password check)
+// @desc    Send OTP (email-only, checks existence based on forSignup flag)
 // @route   POST /api/auth/send-otp
 exports.sendOTP = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, forSignup, name } = req.body;
 
         if (!email) {
             return res.status(400).json({ success: false, message: 'Email is required' });
         }
 
         const user = await User.findOne({ email: email.toLowerCase() });
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'No account found with this email.' });
-        }
-
-        if (user.accountStatus === 'suspended') {
-            return res.status(403).json({ success: false, message: 'Account suspended' });
+        
+        if (forSignup) {
+            if (user) {
+                return res.status(409).json({ success: false, message: 'Email already registered. Please sign in.' });
+            }
+        } else {
+            if (!user) {
+                return res.status(404).json({ success: false, message: 'No account found with this email.' });
+            }
+            if (user.accountStatus === 'suspended') {
+                return res.status(403).json({ success: false, message: 'Account suspended' });
+            }
         }
 
         const recentOTP = await OTP.findOne({
@@ -209,14 +245,18 @@ exports.sendOTP = async (req, res) => {
         await OTP.deleteMany({ email: email.toLowerCase() });
         await OTP.create({ email: email.toLowerCase(), otp, purpose: 'verification' });
 
-        await sendOTPEmail(email, otp, user.name);
-
-        console.log(`📧 OTP sent to ${email}`);
+        try {
+            await sendOTPEmail(email, otp, forSignup ? name : (user ? user.name : 'User'));
+            console.log(`📧 OTP sent to ${email}`);
+        } catch (emailErr) {
+            console.error(`❌ Email send failed for ${email}:`, emailErr.message);
+            return res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
+        }
 
         res.json({
             success: true,
-            message: 'OTP sent to your email address',
-            userType: user.userType,
+            message: 'OTP sent to your email.',
+            userType: user ? user.userType : (forSignup ? 'new_user' : null),
         });
     } catch (err) {
         console.error('Send OTP error:', err);
@@ -254,7 +294,7 @@ exports.verifyOTP = async (req, res) => {
 // @route   POST /api/auth/login-with-otp
 exports.loginWithOTP = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { email, otp, location } = req.body;
 
         if (!email || !otp) {
             return res.status(400).json({ success: false, message: 'Email and OTP are required' });
@@ -287,6 +327,14 @@ exports.loginWithOTP = async (req, res) => {
         await OTP.deleteOne({ _id: otpRecord._id });
 
         user.lastLogin = new Date();
+        // Update location if provided
+        if (location && location.lat && location.lng) {
+            if (!user.address) user.address = {};
+            user.address.coordinates = { lat: location.lat, lng: location.lng };
+            if (location.city) user.address.city = location.city;
+            if (location.state) user.address.state = location.state;
+            if (location.street) user.address.street = location.street;
+        }
         await user.save({ validateModifiedOnly: true });
 
         const token = generateToken(user._id);
@@ -310,5 +358,112 @@ exports.loginWithOTP = async (req, res) => {
     } catch (err) {
         console.error('Login with OTP error:', err);
         res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// @desc    Verify OTP without deleting (for forgot password flow)
+// @route   POST /api/auth/verify-reset-otp
+exports.verifyResetOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+        }
+
+        const otpRecord = await OTP.findOne({ email: email.toLowerCase(), otp });
+        if (!otpRecord) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired OTP. Please try again.' });
+        }
+
+        otpRecord.attempts += 1;
+        if (otpRecord.attempts > 5) {
+            await OTP.deleteOne({ _id: otpRecord._id });
+            return res.status(429).json({ success: false, message: 'Too many failed attempts. Please request a new code.' });
+        }
+        await otpRecord.save();
+
+        // Don't delete — keep for the reset-password step
+        res.json({ success: true, message: 'OTP verified' });
+    } catch (err) {
+        console.error('Verify reset OTP error:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// @desc    Forgot password — send reset OTP to email
+// @route   POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'No account found with this email' });
+        }
+
+        // Rate limit
+        const recentOTP = await OTP.findOne({
+            email: user.email.toLowerCase(),
+            createdAt: { $gt: new Date(Date.now() - 60000) }
+        });
+        if (recentOTP) {
+            return res.status(429).json({ success: false, message: 'Please wait 60 seconds before requesting again.' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await OTP.deleteMany({ email: user.email.toLowerCase() });
+        await OTP.create({ email: user.email.toLowerCase(), otp, purpose: 'password_reset' });
+
+        try {
+            await sendOTPEmail(user.email, otp, user.name);
+            console.log(`📧 Password reset OTP sent to ${user.email}`);
+        } catch (emailErr) {
+            console.error(`❌ Email send failed:`, emailErr.message);
+            return res.status(500).json({ success: false, message: 'Failed to send email. Please try again.' });
+        }
+
+        res.json({ success: true, message: 'Password reset code sent to your email.' });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+    }
+};
+
+// @desc    Reset password with OTP
+// @route   POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        }
+
+        const otpRecord = await OTP.findOne({ email: email.toLowerCase(), otp });
+        if (!otpRecord) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+        }
+
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        console.log(`✅ Password reset successful for ${email}`);
+        res.json({ success: true, message: 'Password reset successful. You can now log in.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
+        res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 };

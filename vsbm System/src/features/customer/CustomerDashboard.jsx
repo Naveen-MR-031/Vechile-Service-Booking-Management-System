@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Home, CalendarCheck, Tag, Car, Settings, Search,
-    Plus, Star, MapPin, Clock, ChevronRight, AlertTriangle,
+    Plus, Star, MapPin, Clock, ChevronRight, ChevronLeft, AlertTriangle,
     CheckCircle, XCircle, MessageSquare, Eye, Filter, Phone,
     Mail, Edit2, Trash2, CreditCard, Bell, Moon, Sun,
     Shield, Wrench, Droplets, Battery, Snowflake, Sparkles, Zap, CircleDot,
@@ -20,6 +20,62 @@ import InvoiceView from '../../components/booking/InvoiceView';
 import { useMockData } from '../../context/MockDataContext';
 import styles from './CustomerDashboard.module.css';
 
+// Image Slider component for provider cards
+const ProviderImageSlider = ({ images, name, isVerified }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const hasMultiple = images.length > 1;
+
+    useEffect(() => {
+        if (!hasMultiple) return;
+        const timer = setInterval(() => {
+            setCurrentIndex(prev => (prev + 1) % images.length);
+        }, 4000);
+        return () => clearInterval(timer);
+    }, [images.length, hasMultiple]);
+
+    return (
+        <div className={styles.providerCover}>
+            <AnimatePresence mode="wait">
+                <motion.img
+                    key={currentIndex}
+                    src={images[currentIndex]}
+                    alt={name}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.5 }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&h=400&fit=crop';
+                    }}
+                />
+            </AnimatePresence>
+            <div className={styles.coverOverlay} />
+            {isVerified && (
+                <span className={styles.verifiedBadge}>
+                    <Shield size={12} /> Verified
+                </span>
+            )}
+            {hasMultiple && (
+                <>
+                    <button className={`${styles.sliderBtn} ${styles.sliderBtnLeft}`} onClick={(e) => { e.stopPropagation(); setCurrentIndex((currentIndex - 1 + images.length) % images.length); }}>
+                        <ChevronLeft size={16} />
+                    </button>
+                    <button className={`${styles.sliderBtn} ${styles.sliderBtnRight}`} onClick={(e) => { e.stopPropagation(); setCurrentIndex((currentIndex + 1) % images.length); }}>
+                        <ChevronRight size={16} />
+                    </button>
+                    <div className={styles.sliderDots}>
+                        {images.map((_, i) => (
+                            <span key={i} className={`${styles.sliderDot} ${i === currentIndex ? styles.sliderDotActive : ''}`} onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }} />
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
 const CustomerDashboard = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -32,6 +88,10 @@ const CustomerDashboard = () => {
     const [searchFocused, setSearchFocused] = useState(false);
     const [showAddVehicle, setShowAddVehicle] = useState(false);
     const [vehicleForm, setVehicleForm] = useState({ make: '', model: '', year: new Date().getFullYear(), registration_number: '', vehicle_type: 'Sedan', fuel_type: 'Petrol', color: '' });
+    
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [profileForm, setProfileForm] = useState({ name: '', phone: '' });
+    const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
     const {
         currentUser, providers, services, loading, serviceCategories,
@@ -39,8 +99,17 @@ const CustomerDashboard = () => {
         getStatusHistoryByBookingId, getIssuesByBookingId, getCommunicationsByBookingId,
         getStatusInfo, discounts, reviews, bookingStatuses,
         approveIssue, declineIssue, cancelBooking, sendMessage,
-        addVehicle, deleteVehicle, addReview
+        addVehicle, deleteVehicle, addReview, updateProfile
     } = useMockData();
+
+    useEffect(() => {
+        if (currentUser) {
+            setProfileForm({
+                name: currentUser.name || [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || '',
+                phone: currentUser.phone || ''
+            });
+        }
+    }, [currentUser]);
 
     // Get user-specific data
     const customerId = currentUser?.customer_id;
@@ -151,6 +220,23 @@ const CustomerDashboard = () => {
         if (window.confirm('Remove this vehicle?')) {
             await deleteVehicle(vehicleId);
             toast.success('Vehicle removed.');
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        if (!profileForm.name) {
+            toast.error('Name is required');
+            return;
+        }
+        setIsUpdatingProfile(true);
+        try {
+            await updateProfile(profileForm);
+            toast.success('Profile updated successfully!');
+            setIsEditingProfile(false);
+        } catch (err) {
+            toast.error('Failed to update profile');
+        } finally {
+            setIsUpdatingProfile(false);
         }
     };
 
@@ -379,30 +465,32 @@ const CustomerDashboard = () => {
                                     {filteredProviders.map((provider, idx) => {
                                         const providerServices = services.filter(s => s.provider_id === provider.provider_id && s.is_active);
                                         const isVerified = provider.verification_status === 'Verified';
+                                        const images = provider.gallery && provider.gallery.length > 0
+                                            ? provider.gallery
+                                            : [provider.cover_image];
                                         return (
                                             <motion.div
                                                 key={provider.provider_id}
                                                 className={styles.providerCard}
-                                                initial={{ opacity: 0, y: 40 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: idx * 0.12, duration: 0.5 }}
+                                                initial={{ opacity: 0, y: 40, rotateX: 8 }}
+                                                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                                                transition={{ delay: idx * 0.1, duration: 0.6, type: 'spring', stiffness: 80 }}
+                                                whileHover={{ y: -10, rotateY: 2, scale: 1.02 }}
+                                                style={{ perspective: '1000px', transformStyle: 'preserve-3d' }}
                                             >
-                                                {/* Cover Image */}
-                                                <div className={styles.providerCover}>
-                                                    <img src={provider.cover_image} alt={provider.company_name} />
-                                                    {isVerified && (
-                                                        <span className={styles.verifiedBadge}>
-                                                            <Shield size={12} /> Verified
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                {/* Image Slideshow Cover */}
+                                                <ProviderImageSlider images={images} name={provider.company_name} isVerified={isVerified} />
                                                 {/* Card Body */}
                                                 <div className={styles.providerBody}>
                                                     <div className={styles.providerCardHeader}>
-                                                        <img src={provider.business_logo} alt={provider.company_name} className={styles.providerLogo} />
+                                                        <img 
+                                                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(provider.company_name)}&size=96&background=1a1a2e&color=ff6b35&bold=true&rounded=true`}
+                                                            alt={provider.company_name} 
+                                                            className={styles.providerLogo}
+                                                        />
                                                         <div className={styles.providerInfo}>
                                                             <h4>{provider.company_name}</h4>
-                                                            <span className={styles.providerLocation}><MapPin size={12} /> {provider.address.split(',')[0]}</span>
+                                                            <span className={styles.providerLocation}><MapPin size={12} /> {provider.address.split(',')[0] || 'Location not set'}</span>
                                                         </div>
                                                     </div>
                                                     {/* Rating and reviews */}
@@ -414,7 +502,7 @@ const CustomerDashboard = () => {
                                                         <span className={styles.providerYear}>Est. {provider.year_established}</span>
                                                     </div>
                                                     {/* Description */}
-                                                    <p className={styles.providerDesc}>{provider.description}</p>
+                                                    {provider.description && <p className={styles.providerDesc}>{provider.description}</p>}
                                                     {/* Services */}
                                                     <div className={styles.providerTags}>
                                                         {providerServices.slice(0, 3).map(s => (
@@ -422,14 +510,6 @@ const CustomerDashboard = () => {
                                                         ))}
                                                         {providerServices.length > 3 && <span className={styles.tagMore}>+{providerServices.length - 3} more</span>}
                                                     </div>
-                                                    {/* Amenities */}
-                                                    {provider.amenities && (
-                                                        <div className={styles.amenitiesList}>
-                                                            {provider.amenities.slice(0, 4).map((a, i) => (
-                                                                <span key={i} className={styles.amenityTag}>{a}</span>
-                                                            ))}
-                                                        </div>
-                                                    )}
                                                     {/* CTA */}
                                                     <Button size="sm" onClick={() => navigate(`/book-service?provider=${provider.provider_id}`)} style={{ width: '100%', marginTop: '12px' }}>
                                                         Book Now <ChevronRight size={14} />
@@ -746,25 +826,64 @@ const CustomerDashboard = () => {
                             <div className={styles.settingsSections}>
                                 {/* Profile */}
                                 <div className={styles.settingsCard}>
-                                    <h4>Profile Information</h4>
-                                    <div className={styles.settingsFieldsGrid}>
-                                        <div className={styles.settingsField}>
-                                            <label>Full Name</label>
-                                            <span>{currentUser.first_name} {currentUser.last_name}</span>
-                                        </div>
-                                        <div className={styles.settingsField}>
-                                            <label>Email</label>
-                                            <span><Mail size={14} /> {currentUser.email}</span>
-                                        </div>
-                                        <div className={styles.settingsField}>
-                                            <label>Phone</label>
-                                            <span><Phone size={14} /> {currentUser.phone || 'Not set'}</span>
-                                        </div>
-                                        <div className={styles.settingsField}>
-                                            <label>Member Since</label>
-                                            <span>{new Date(currentUser.registration_date || Date.now()).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</span>
-                                        </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                        <h4 style={{ margin: 0 }}>Profile Information</h4>
+                                        {!isEditingProfile && (
+                                            <Button size="sm" variant="outline" onClick={() => setIsEditingProfile(true)}>
+                                                <Edit2 size={14} /> Edit Profile
+                                            </Button>
+                                        )}
                                     </div>
+
+                                    {isEditingProfile ? (
+                                        <div className={styles.formCard} style={{ margin: 0, padding: 0, background: 'transparent', border: 'none', boxShadow: 'none' }}>
+                                            <div className={styles.formRow} style={{ marginBottom: '16px' }}>
+                                                <div className={styles.formGroup}>
+                                                    <label>Full Name *</label>
+                                                    <input value={profileForm.name} onChange={e => setProfileForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Full Name" />
+                                                </div>
+                                            </div>
+                                            <div className={styles.formRow} style={{ marginBottom: '24px' }}>
+                                                <div className={styles.formGroup}>
+                                                    <label>Phone</label>
+                                                    <input value={profileForm.phone} onChange={e => setProfileForm(prev => ({ ...prev, phone: e.target.value }))} placeholder="Phone Number" />
+                                                </div>
+                                                <div className={styles.formGroup}>
+                                                    <label>Email (cannot be changed)</label>
+                                                    <input value={currentUser.email} disabled style={{ opacity: 0.7 }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '12px' }}>
+                                                <Button size="sm" onClick={handleSaveProfile} loading={isUpdatingProfile}>Save Changes</Button>
+                                                <Button size="sm" variant="outline" onClick={() => {
+                                                    setIsEditingProfile(false);
+                                                    setProfileForm({
+                                                        name: currentUser.name || [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || '',
+                                                        phone: currentUser.phone || ''
+                                                    });
+                                                }} disabled={isUpdatingProfile}>Cancel</Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className={styles.settingsFieldsGrid}>
+                                            <div className={styles.settingsField}>
+                                                <label>Full Name</label>
+                                                <span>{currentUser.name || [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ')}</span>
+                                            </div>
+                                            <div className={styles.settingsField}>
+                                                <label>Email</label>
+                                                <span><Mail size={14} /> {currentUser.email}</span>
+                                            </div>
+                                            <div className={styles.settingsField}>
+                                                <label>Phone</label>
+                                                <span><Phone size={14} /> {currentUser.phone || 'Not set'}</span>
+                                            </div>
+                                            <div className={styles.settingsField}>
+                                                <label>Member Since</label>
+                                                <span>{new Date(currentUser.registration_date || Date.now()).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Preferences */}

@@ -20,6 +20,7 @@ import BookService from './features/customer/BookService';
 import ServiceDashboard from './features/provider/ServiceDashboard';
 import ProviderLogin from './features/auth/ProviderLogin';
 import ProviderSignup from './features/auth/ProviderSignup';
+import ForgotPassword from './features/auth/ForgotPassword';
 import EmergencyBooking from './features/customer/EmergencyBooking';
 
 // Styles
@@ -57,6 +58,7 @@ function App() {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<GuestRoute><CustomerLogin /></GuestRoute>} />
             <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/track" element={<Navigate to="/customer/dashboard?tab=track" replace />} />
             <Route path="/book-service" element={<ProtectedRoute><BookService /></ProtectedRoute>} />
             <Route path="/emergency-booking" element={<ProtectedRoute><EmergencyBooking /></ProtectedRoute>} />

@@ -52,7 +52,7 @@ const Navbar = ({ variant = 'default' }) => {
 
     const getUserName = () => {
         if (!currentUser) return '';
-        return currentUser.first_name || currentUser.company_name || 'User';
+        return currentUser.name || currentUser.first_name || currentUser.company_name || currentUser.businessName || 'User';
     };
 
     const getUserInitial = () => {
@@ -82,9 +82,7 @@ const Navbar = ({ variant = 'default' }) => {
             <div className={styles.container}>
                 {/* Logo */}
                 <Link to="/" className={styles.logo}>
-                    <div className={styles.logoIcon}>
-                        <Car size={24} />
-                    </div>
+                    <img src="/fos-icon.png" alt="FastOnService" className={styles.logoImg} />
                     <span className={styles.logoText}>Fast<span className={styles.logoAccent}>On</span>Service</span>
                 </Link>
 
@@ -123,9 +121,7 @@ const Navbar = ({ variant = 'default' }) => {
                                 className={styles.profileButton}
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                             >
-                                <div className={styles.avatar}>
-                                    {getUserInitial()}
-                                </div>
+                                <span className={styles.avatar}>{getUserInitial()}</span>
                                 <span className={styles.userName}>{getUserName()}</span>
                                 <ChevronDown size={16} className={isProfileOpen ? styles.rotated : ''} />
                             </button>

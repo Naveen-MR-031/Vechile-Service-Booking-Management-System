@@ -40,10 +40,10 @@ const values = [
 ];
 
 const team = [
-    { name: 'Naveen Kumar', role: 'Founder & CEO', avatar: 'N' },
-    { name: 'Priya Sharma', role: 'Head of Operations', avatar: 'P' },
-    { name: 'Rahul Singh', role: 'Tech Lead', avatar: 'R' },
-    { name: 'Anita Desai', role: 'Customer Success', avatar: 'A' }
+    { name: 'Naveen Kumar', role: 'Founder & CEO', avatar: 'https://ui-avatars.com/api/?name=Naveen+Kumar&size=100&background=EF4444&color=fff&bold=true' },
+    { name: 'Priya Sharma', role: 'Head of Operations', avatar: 'https://ui-avatars.com/api/?name=Priya+Sharma&size=100&background=3B82F6&color=fff&bold=true' },
+    { name: 'Rahul Singh', role: 'Tech Lead', avatar: 'https://ui-avatars.com/api/?name=Rahul+Singh&size=100&background=8B5CF6&color=fff&bold=true' },
+    { name: 'Anita Desai', role: 'Customer Success', avatar: 'https://ui-avatars.com/api/?name=Anita+Desai&size=100&background=22C55E&color=fff&bold=true' }
 ];
 
 const AboutPage = () => {
@@ -167,7 +167,7 @@ const AboutPage = () => {
                                 viewport={{ once: true }}
                                 transition={{ delay: index * 0.1 }}
                             >
-                                <div className={styles.avatar}>{member.avatar}</div>
+                                <img src={member.avatar} alt={member.name} className={styles.avatar} style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover' }} />
                                 <h3>{member.name}</h3>
                                 <p>{member.role}</p>
                             </motion.div>
@@ -204,7 +204,7 @@ const AboutPage = () => {
             {/* Footer */}
             <footer className={styles.footer}>
                 <div className={styles.footerBrand}>
-                    <Car size={24} />
+                    <img src="/fos-logo.png" alt="FastOnService" style={{ height: 24, width: 'auto', objectFit: 'contain' }} />
                     <span>FastOnService</span>
                 </div>
                 <p>© 2025 FastOnService. All rights reserved.</p>

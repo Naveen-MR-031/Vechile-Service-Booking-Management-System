@@ -218,7 +218,7 @@ const ContactPage = () => {
             {/* Footer */}
             <footer className={styles.footer}>
                 <div className={styles.footerBrand}>
-                    <Car size={24} />
+                    <img src="/fos-logo.png" alt="FastOnService" style={{ height: 24, width: 'auto', objectFit: 'contain' }} />
                     <span>FastOnService</span>
                 </div>
                 <p>© 2025 FastOnService. All rights reserved.</p>

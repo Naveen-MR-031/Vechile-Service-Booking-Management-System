@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Mail, Lock, User, Phone, MapPin, ArrowRight, ArrowLeft,
-    Car, CheckCircle, Sparkles
+    Car, CheckCircle, Sparkles, ShieldCheck, KeyRound, Loader2
 } from 'lucide-react';
 import { useMockData } from '../../context/MockDataContext';
 import Button from '../../components/ui/Button';
@@ -14,6 +14,7 @@ import styles from './Signup.module.css';
 const STEPS = [
     { id: 1, title: 'Account', icon: Mail },
     { id: 2, title: 'Profile', icon: User },
+    { id: 3, title: 'Verify', icon: ShieldCheck },
 ];
 
 const Signup = () => {
@@ -27,10 +28,25 @@ const Signup = () => {
         address: '',
         userType: 'customer',
     });
+    const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    const { registerCustomer } = useMockData();
+    const [countdown, setCountdown] = useState(0);
+    const { registerCustomer, sendOTP } = useMockData();
     const navigate = useNavigate();
+    const otpRefs = useRef([]);
+
+    useEffect(() => {
+        if (countdown <= 0) return;
+        const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
+    useEffect(() => {
+        if (step === 3 && otpRefs.current[0]) {
+            setTimeout(() => otpRefs.current[0]?.focus(), 300);
+        }
+    }, [step]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -56,8 +72,73 @@ const Signup = () => {
             if (!formData.phone) newErrors.phone = 'Phone number is required';
         }
 
+        if (stepNum === 3) {
+            const otpString = otp.join('');
+            if (!otpString) newErrors.otp = 'OTP is required';
+            else if (otpString.length !== 6) newErrors.otp = 'OTP must be 6 digits';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
+    };
+
+    const handleOTPChange = (index, value) => {
+        if (!/^\d*$/.test(value)) return;
+        const newOtp = [...otp];
+        newOtp[index] = value.slice(-1);
+        setOtp(newOtp);
+        if (value && index < 5) otpRefs.current[index + 1]?.focus();
+        if (errors.otp) setErrors(prev => ({ ...prev, otp: '' }));
+    };
+
+    const handleOTPKeyDown = (index, e) => {
+        if (e.key === 'Backspace' && !otp[index] && index > 0) {
+            otpRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handleOTPPaste = (e) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        if (pasted.length === 6) {
+            setOtp(pasted.split(''));
+            otpRefs.current[5]?.focus();
+        }
+    };
+
+    const handleSendOTP = async () => {
+        if (!validateStep(2)) return;
+        
+        setIsLoading(true);
+        try {
+            const res = await sendOTP(formData.email, true, formData.name);
+            if (res.success) {
+                toast.success('Verification code sent to your email!');
+                setStep(3);
+                setCountdown(60);
+                setOtp(['', '', '', '', '', '']);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to send verification code');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResendOTP = async () => {
+        setIsLoading(true);
+        try {
+            const res = await sendOTP(formData.email, true, formData.name);
+            if (res.success) {
+                toast.success('New code sent to your email!');
+                setCountdown(60);
+                setOtp(['', '', '', '', '', '']);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to resend code');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const nextStep = () => {
@@ -71,7 +152,11 @@ const Signup = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!validateStep(2)) return;
+        const otpString = otp.join('');
+        if (otpString.length !== 6) {
+            setErrors({ otp: 'Please enter the complete 6-digit OTP' });
+            return;
+        }
 
         setIsLoading(true);
         try {
@@ -81,11 +166,12 @@ const Signup = () => {
                 password: formData.password,
                 phone: formData.phone,
                 address: formData.address,
+                otp: otpString,
             });
 
             if (result.success) {
-                toast.success('Account created successfully! Please log in to verify your email.');
-                setTimeout(() => navigate('/login'), 1500);
+                toast.success('Account created successfully! Welcome aboard!');
+                navigate('/customer/dashboard');
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed');
@@ -111,7 +197,7 @@ const Signup = () => {
             >
                 <div className={styles.visualContent}>
                     <div className={styles.logoLarge}>
-                        <Car size={48} />
+                        <img src="/fos-icon.png" alt="FastOnService" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }} />
                     </div>
                     <h1 className={styles.visualTitle}>
                         Join thousands of<br />
@@ -282,6 +368,59 @@ const Signup = () => {
                                     />
                                 </motion.div>
                             )}
+
+                            {step === 3 && (
+                                <motion.div
+                                    key="step3"
+                                    custom={1}
+                                    variants={slideVariants}
+                                    initial="enter"
+                                    animate="center"
+                                    exit="exit"
+                                    transition={{ duration: 0.3 }}
+                                    className={styles.stepContent}
+                                >
+                                    <div className={styles.stepHeader}>
+                                        <h2><KeyRound size={22} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Verify Your Email</h2>
+                                        <p>We've sent a 6-digit code to <strong style={{ color: 'var(--text)' }}>{formData.email}</strong></p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', margin: '10px 0 20px' }}>
+                                        {otp.map((digit, i) => (
+                                            <input key={i} ref={el => otpRefs.current[i] = el}
+                                                type="text" inputMode="numeric" maxLength={1} value={digit}
+                                                onChange={(e) => handleOTPChange(i, e.target.value)}
+                                                onKeyDown={(e) => handleOTPKeyDown(i, e)}
+                                                onPaste={i === 0 ? handleOTPPaste : undefined}
+                                                style={{
+                                                    width: '48px', height: '56px', textAlign: 'center',
+                                                    fontSize: '1.5rem', fontWeight: 700, fontFamily: 'monospace',
+                                                    borderRadius: '10px',
+                                                    border: `2px solid ${errors.otp ? 'var(--destructive, #ef4444)' : digit ? 'var(--primary, #3b82f6)' : 'var(--border, #334155)'}`,
+                                                    background: 'var(--bg-input, #0f172a)',
+                                                    color: 'var(--text-primary, #f1f5f9)',
+                                                    outline: 'none', transition: 'border-color 0.2s'
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {errors.otp && (
+                                        <p style={{ color: 'var(--destructive, #ef4444)', fontSize: '0.85rem', textAlign: 'center', margin: '0 0 12px' }}>{errors.otp}</p>
+                                    )}
+
+                                    <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                                        {countdown > 0 ? (
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Resend in {countdown}s</span>
+                                        ) : (
+                                            <button type="button" onClick={handleResendOTP} disabled={isLoading}
+                                                style={{ color: 'var(--primary)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.85rem' }}>
+                                                Resend Code
+                                            </button>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
                         </AnimatePresence>
 
                         {/* Navigation Buttons */}
@@ -292,30 +431,44 @@ const Signup = () => {
                                     variant="secondary"
                                     onClick={prevStep}
                                     icon={<ArrowLeft size={18} />}
+                                    disabled={isLoading}
                                 >
                                     Back
                                 </Button>
                             )}
 
-                            {step < 2 ? (
+                            {step === 1 && (
                                 <Button
                                     type="button"
                                     onClick={nextStep}
-                                    loading={isLoading}
                                     icon={<ArrowRight size={18} />}
                                     iconPosition="right"
-                                    fullWidth={step === 1}
+                                    fullWidth
                                 >
                                     Continue
                                 </Button>
-                            ) : (
+                            )}
+                            
+                            {step === 2 && (
+                                <Button
+                                    type="button"
+                                    onClick={handleSendOTP}
+                                    loading={isLoading}
+                                    icon={<ShieldCheck size={18} />}
+                                    iconPosition="right"
+                                >
+                                    Send OTP
+                                </Button>
+                            )}
+
+                            {step === 3 && (
                                 <Button
                                     type="submit"
                                     loading={isLoading}
                                     icon={<CheckCircle size={18} />}
                                     iconPosition="right"
                                 >
-                                    Create Account
+                                    Verify & Register
                                 </Button>
                             )}
                         </div>

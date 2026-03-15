@@ -22,9 +22,14 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+            // Don't redirect for auth endpoints (login, register, OTP etc.)
+            const url = error.config?.url || '';
+            const isAuthRoute = url.includes('/auth/');
+            if (!isAuthRoute) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }
@@ -39,6 +44,9 @@ export const authAPI = {
     sendOTPAfterLogin: (data) => api.post('/auth/send-otp-after-login', data),
     verifyOTP: (data) => api.post('/auth/verify-otp', data),
     loginWithOTP: (data) => api.post('/auth/login-with-otp', data),
+    forgotPassword: (data) => api.post('/auth/forgot-password', data),
+    resetPassword: (data) => api.post('/auth/reset-password', data),
+    verifyResetOTP: (data) => api.post('/auth/verify-reset-otp', data),
 };
 
 // ==================== CUSTOMER ====================

@@ -41,7 +41,7 @@ const InvoiceView = ({ booking, provider, customer, onClose }) => {
                     <div className={styles.header}>
                         <div className={styles.brandSection}>
                             <div className={styles.logo}>
-                                <span className={styles.logoIcon}>🚗</span>
+                                <img src="/fos-logo.png" alt="FastOnService" style={{ height: 40, width: 'auto', objectFit: 'contain', borderRadius: 8 }} />
                                 <div>
                                     <h1 className={styles.brandName}>Fast<span>On</span>Service</h1>
                                     <p className={styles.brandTagline}>Premium Vehicle Service</p>
