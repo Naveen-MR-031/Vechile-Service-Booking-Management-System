@@ -1,83 +1,82 @@
 const nodemailer = require('nodemailer');
-const dns = require('dns');
-const { promisify } = require('util');
+const net = require('net');
 
-const resolve4 = promisify(dns.resolve4);
+console.log(`📧 Email: ${process.env.EMAIL_USER || 'NOT SET'}`);
 
-// Log email config at startup (no secrets)
-console.log(`📧 Email config: USER=${process.env.EMAIL_USER || 'NOT SET'}, PASSWORD=${process.env.EMAIL_PASSWORD ? 'SET (' + process.env.EMAIL_PASSWORD.length + ' chars)' : 'NOT SET'}`);
-
-// Resolve Gmail SMTP to IPv4 and cache it
-let gmailIPv4 = null;
-
-async function getGmailIPv4() {
-    if (gmailIPv4) return gmailIPv4;
-    try {
-        const addresses = await resolve4('smtp.gmail.com');
-        gmailIPv4 = addresses[0];
-        console.log(`📧 Resolved smtp.gmail.com to IPv4: ${gmailIPv4}`);
-        return gmailIPv4;
-    } catch (err) {
-        console.error('❌ Failed to resolve smtp.gmail.com to IPv4:', err.message);
-        return 'smtp.gmail.com'; // fallback to hostname
-    }
-}
-
-// Pre-resolve on startup
-getGmailIPv4();
-
-function createTransporter(host) {
-    return nodemailer.createTransport({
-        host: host,
-        port: 587,
-        secure: false,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASSWORD,
-        },
-        tls: {
-            servername: 'smtp.gmail.com',
-            rejectUnauthorized: true,
-        },
+/**
+ * Create a pre-connected IPv4 TCP socket to Gmail SMTP.
+ * This bypasses Render's IPv6 issue entirely — nodemailer's
+ * "connection" option uses the socket directly with ZERO DNS.
+ */
+function connectIPv4() {
+    return new Promise((resolve, reject) => {
+        const sock = net.createConnection({ host: 'smtp.gmail.com', port: 587, family: 4 });
+        const timer = setTimeout(() => { sock.destroy(); reject(new Error('SMTP connect timeout')); }, 10000);
+        sock.once('connect', () => { clearTimeout(timer); resolve(sock); });
+        sock.once('error', (err) => { clearTimeout(timer); reject(err); });
     });
 }
 
 /**
- * Send OTP email using Gmail SMTP
+ * Send OTP email via Gmail SMTP forced over IPv4.
  */
 const sendOTPEmail = async (email, otp, userName) => {
-    const htmlContent = generateOTPTemplate(otp, userName);
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        throw new Error('Email credentials not configured');
+    }
 
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD &&
-        process.env.EMAIL_USER !== 'placeholder@gmail.com') {
-        try {
-            const host = await getGmailIPv4();
-            console.log(`📧 Attempting to send OTP to ${email} via ${host}...`);
-            const transporter = createTransporter(host);
-            const info = await transporter.sendMail({
-                from: `"FastOnService" <${process.env.EMAIL_USER}>`,
-                to: email,
-                subject: `Your FastOnService Login Code: ${otp}`,
-                html: htmlContent,
-                headers: {
-                    'X-Priority': '1',
-                    'X-Mailer': 'FastOnService Platform',
-                    'List-Unsubscribe': `<mailto:${process.env.EMAIL_USER}?subject=unsubscribe>`,
-                },
-                text: `Hello${userName ? ' ' + userName : ''},\n\nYour FastOnService verification code is: ${otp}\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\n- FastOnService Team`,
-            });
-            console.log(`✅ OTP email sent via Gmail SMTP to ${email} (ID: ${info.messageId})`);
-            return { id: info.messageId };
-        } catch (gmailError) {
-            console.error('⚠️ Gmail SMTP failed:', gmailError.code, gmailError.message);
-            console.error('⚠️ Full error:', JSON.stringify({ code: gmailError.code, command: gmailError.command, response: gmailError.response }));
-            throw new Error(`Failed to send OTP email: ${gmailError.message}`);
-        }
-    } else {
-        console.error('⚠️ Gmail credentials not configured. EMAIL_USER:', process.env.EMAIL_USER ? 'set' : 'missing', 'EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'set' : 'missing');
-        throw new Error('Email credentials not configured.');
+    console.log(`📧 Sending OTP to ${email}...`);
+
+    // 1) TCP connect to Gmail over IPv4 (no DNS in nodemailer)
+    const sock = await connectIPv4();
+    console.log(`📧 IPv4 socket connected to ${sock.remoteAddress}:${sock.remotePort}`);
+
+    // 2) Hand the connected socket to nodemailer via "connection"
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        connection: sock,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD,
+        },
+        tls: { servername: 'smtp.gmail.com' },
+    });
+
+    try {
+        const info = await transporter.sendMail({
+            from: `"FastOnService" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `Your FastOnService Code: ${otp}`,
+            html: generateOTPTemplate(otp, userName),
+            text: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
+        });
+        console.log(`✅ OTP sent to ${email} (${info.messageId})`);
+        return { id: info.messageId };
+    } finally {
+        transporter.close();
     }
 };
+
+// Quick startup check
+(async () => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return;
+    try {
+        const sock = await connectIPv4();
+        const t = nodemailer.createTransport({
+            host: 'smtp.gmail.com', port: 587, secure: false,
+            connection: sock,
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
+            tls: { servername: 'smtp.gmail.com' },
+        });
+        await t.verify();
+        t.close();
+        console.log('✅ Gmail SMTP verified (IPv4)');
+    } catch (e) {
+        console.error('❌ Gmail check failed:', e.message);
+    }
+})();
 
 function generateOTPTemplate(otp, userName) {
     return `
