@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm install && npx vite build",
+    "build": "vite build",
+    "vercel-build": "npm install && npx vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
