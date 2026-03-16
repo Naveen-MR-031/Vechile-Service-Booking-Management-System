@@ -3,9 +3,12 @@ const nodemailer = require('nodemailer');
 // Log email config at startup (no secrets)
 console.log(`📧 Email config: USER=${process.env.EMAIL_USER || 'NOT SET'}, PASSWORD=${process.env.EMAIL_PASSWORD ? 'SET (' + process.env.EMAIL_PASSWORD.length + ' chars)' : 'NOT SET'}`);
 
-// Gmail SMTP transporter (works for ALL email addresses)
+// Gmail SMTP transporter — force IPv4 to avoid IPv6 issues on Render
 const gmailTransporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    family: 4,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
