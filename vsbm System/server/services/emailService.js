@@ -1,7 +1,4 @@
 const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Gmail SMTP transporter (works for ALL email addresses)
 const gmailTransporter = nodemailer.createTransport({
@@ -13,12 +10,11 @@ const gmailTransporter = nodemailer.createTransport({
 });
 
 /**
- * Send OTP email — tries Gmail SMTP first, falls back to Resend
+ * Send OTP email using Gmail SMTP
  */
 const sendOTPEmail = async (email, otp, userName) => {
     const htmlContent = generateOTPTemplate(otp, userName);
 
-    // Try Gmail SMTP first (can send to ANY email)
     if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD &&
         process.env.EMAIL_USER !== 'placeholder@gmail.com') {
         try {
@@ -37,25 +33,13 @@ const sendOTPEmail = async (email, otp, userName) => {
             console.log(`✅ OTP email sent via Gmail SMTP to ${email} (ID: ${info.messageId})`);
             return { id: info.messageId };
         } catch (gmailError) {
-            console.error('⚠️ Gmail SMTP failed, trying Resend...', gmailError.message);
+            console.error('⚠️ Gmail SMTP failed...', gmailError.message);
+            throw new Error(`Failed to send OTP email: ${gmailError.message}`);
         }
+    } else {
+        console.error('⚠️ Gmail credentials not configured correctly.');
+        throw new Error('Email credentials not configured.');
     }
-
-    // Fallback to Resend
-    const { data, error } = await resend.emails.send({
-        from: 'FastOnService <onboarding@resend.dev>',
-        to: email,
-        subject: `Your FastOnService Login Code: ${otp}`,
-        html: htmlContent,
-    });
-
-    if (error) {
-        console.error('❌ Resend email error:', error);
-        throw new Error(`Failed to send OTP email: ${error.message}`);
-    }
-
-    console.log(`✅ OTP email sent via Resend to ${email} (ID: ${data?.id})`);
-    return data;
 };
 
 function generateOTPTemplate(otp, userName) {
