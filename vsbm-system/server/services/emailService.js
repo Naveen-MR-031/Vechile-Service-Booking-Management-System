@@ -1,7 +1,16 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 
 // Log email config at startup (no secrets)
 console.log(`📧 Email config: USER=${process.env.EMAIL_USER || 'NOT SET'}, PASSWORD=${process.env.EMAIL_PASSWORD ? 'SET (' + process.env.EMAIL_PASSWORD.length + ' chars)' : 'NOT SET'}`);
+
+// Force all DNS to IPv4
+dns.setDefaultResultOrder('ipv4first');
+
+// Custom lookup that strictly uses IPv4
+const ipv4Lookup = (hostname, options, callback) => {
+    dns.lookup(hostname, { family: 4 }, callback);
+};
 
 // Gmail SMTP transporter — force IPv4 to avoid IPv6 issues on Render
 const gmailTransporter = nodemailer.createTransport({
@@ -12,6 +21,10 @@ const gmailTransporter = nodemailer.createTransport({
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
+    },
+    dnsLookup: ipv4Lookup,
+    tls: {
+        servername: 'smtp.gmail.com',
     },
 });
 
