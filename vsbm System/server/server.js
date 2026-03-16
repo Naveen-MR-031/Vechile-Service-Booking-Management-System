@@ -160,16 +160,31 @@ app.use((err, req, res, next) => {
     });
 });
 
-// --- Start Server ---
+// --- Start Server or Export for Serverless ---
 const PORT = process.env.PORT || 5001;
 
-const startServer = async () => {
-    await connectDB();
-    server.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📡 API: http://localhost:${PORT}`);
-        console.log(`🌐 Frontend: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+// Only start the server if we're not running in a Vercel Serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    const startServer = async () => {
+        await connectDB();
+        server.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+            console.log(`📡 API: http://localhost:${PORT}`);
+            console.log(`🌐 Frontend: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+        });
+    };
+    startServer();
+} else {
+    // In Vercel, wait for the DB to connect on the first cold start request
+    let isDbConnected = false;
+    app.use(async (req, res, next) => {
+        if (!isDbConnected) {
+            await connectDB();
+            isDbConnected = true;
+        }
+        next();
     });
-};
+}
 
-startServer();
+// Export the Express API for Vercel
+module.exports = app;
