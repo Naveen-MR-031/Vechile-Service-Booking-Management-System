@@ -1,132 +1,56 @@
-const nodemailer = require('nodemailer');
-const net = require('net');
-const dns = require('dns').promises;
-
-console.log(`📧 Email: ${process.env.EMAIL_USER || 'NOT SET'}`);
-
 /**
- * Resolve smtp.gmail.com to IPv4 IP, then open a raw TCP socket to that IP.
- * This guarantees zero IPv6 involvement at every layer.
+ * Email service using Brevo (Sendinblue) HTTP API.
+ * Render free tier blocks SMTP ports (587/465), so we use HTTPS (port 443).
+ * 
+ * Required env var: BREVO_API_KEY (get from https://app.brevo.com/settings/keys/api)
+ * Optional env var: EMAIL_FROM (sender email, default: fastonsevice@gmail.com)
  */
-async function connectIPv4(port) {
-    // Step 1: Resolve hostname to IPv4 IPs (A records only)
-    const ips = await dns.resolve4('smtp.gmail.com');
-    const ip = ips[0];
-    console.log(`📧 Resolved smtp.gmail.com → ${ip}`);
 
-    // Step 2: Connect to raw IPv4 IP (no hostname = no DNS in net layer)
-    return new Promise((resolve, reject) => {
-        const sock = net.createConnection({ host: ip, port });
-        const timer = setTimeout(() => { sock.destroy(); reject(new Error(`TCP connect timeout to ${ip}:${port}`)); }, 15000);
-        sock.once('connect', () => { clearTimeout(timer); resolve(sock); });
-        sock.once('error', (err) => { clearTimeout(timer); reject(err); });
-    });
-}
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const FROM_EMAIL = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'fastonsevice@gmail.com';
+const FROM_NAME = 'FastOnService';
+
+console.log(`📧 Email service: Brevo HTTP API | From: ${FROM_EMAIL}`);
+console.log(`📧 BREVO_API_KEY: ${process.env.BREVO_API_KEY ? 'SET (' + process.env.BREVO_API_KEY.length + ' chars)' : 'NOT SET'}`);
 
 /**
- * Send OTP email via Gmail SMTP forced over IPv4.
- * Tries port 587 (STARTTLS) first, then port 465 (SSL) as fallback.
+ * Send OTP email via Brevo's HTTP API (uses HTTPS, no SMTP).
  */
 const sendOTPEmail = async (email, otp, userName) => {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-        throw new Error('Email credentials not configured');
+    if (!process.env.BREVO_API_KEY) {
+        throw new Error('BREVO_API_KEY not configured. Get one free at https://app.brevo.com/settings/keys/api');
     }
 
-    console.log(`📧 Sending OTP to ${email}...`);
-    const errors = [];
+    console.log(`📧 Sending OTP to ${email} via Brevo...`);
 
-    // Attempt 1: Port 587 with pre-connected IPv4 socket
-    try {
-        const sock = await connectIPv4(587);
-        console.log(`📧 TCP connected to ${sock.remoteAddress}:587`);
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com', port: 587, secure: false,
-            connection: sock,
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
-            tls: { servername: 'smtp.gmail.com' },
-            connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 30000,
-        });
-        const info = await transporter.sendMail({
-            from: `"FastOnService" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: `Your FastOnService Code: ${otp}`,
-            html: generateOTPTemplate(otp, userName),
-            text: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
-        });
-        console.log(`✅ OTP sent via port 587 to ${email} (${info.messageId})`);
-        transporter.close();
-        return { id: info.messageId };
-    } catch (e) {
-        errors.push(`587: ${e.code || ''} ${e.message}`);
-        console.error(`⚠️ Port 587 failed:`, e.code, e.message);
+    const body = JSON.stringify({
+        sender: { name: FROM_NAME, email: FROM_EMAIL },
+        to: [{ email }],
+        subject: `Your FastOnService Code: ${otp}`,
+        htmlContent: generateOTPTemplate(otp, userName),
+        textContent: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
+    });
+
+    const response = await fetch(BREVO_API_URL, {
+        method: 'POST',
+        headers: {
+            'api-key': process.env.BREVO_API_KEY,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        console.error('❌ Brevo API error:', response.status, JSON.stringify(data));
+        throw new Error(`Email failed: ${data.message || response.statusText}`);
     }
 
-    // Attempt 2: Port 465 (SSL) with pre-connected IPv4 socket
-    try {
-        const sock = await connectIPv4(465);
-        console.log(`📧 TCP connected to ${sock.remoteAddress}:465`);
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com', port: 465, secure: true,
-            connection: sock,
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
-            tls: { servername: 'smtp.gmail.com' },
-            connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 30000,
-        });
-        const info = await transporter.sendMail({
-            from: `"FastOnService" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: `Your FastOnService Code: ${otp}`,
-            html: generateOTPTemplate(otp, userName),
-            text: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
-        });
-        console.log(`✅ OTP sent via port 465 to ${email} (${info.messageId})`);
-        transporter.close();
-        return { id: info.messageId };
-    } catch (e) {
-        errors.push(`465: ${e.code || ''} ${e.message}`);
-        console.error(`⚠️ Port 465 failed:`, e.code, e.message);
-    }
-
-    // Attempt 3: Let nodemailer handle DNS but with IPv4-first hints
-    try {
-        console.log(`📧 Attempt 3: standard nodemailer with resolved host...`);
-        const ips = await dns.resolve4('smtp.gmail.com');
-        const transporter = nodemailer.createTransport({
-            host: ips[0], port: 587, secure: false,
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
-            tls: { servername: 'smtp.gmail.com' },
-            connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 30000,
-        });
-        const info = await transporter.sendMail({
-            from: `"FastOnService" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: `Your FastOnService Code: ${otp}`,
-            html: generateOTPTemplate(otp, userName),
-            text: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
-        });
-        console.log(`✅ OTP sent via attempt 3 to ${email} (${info.messageId})`);
-        transporter.close();
-        return { id: info.messageId };
-    } catch (e) {
-        errors.push(`direct-ip: ${e.code || ''} ${e.message}`);
-        console.error(`⚠️ Attempt 3 failed:`, e.code, e.message);
-    }
-
-    const fullError = `All email attempts failed: ${errors.join(' | ')}`;
-    console.error(`❌ ${fullError}`);
-    throw new Error(fullError);
+    console.log(`✅ OTP sent to ${email} (messageId: ${data.messageId})`);
+    return { id: data.messageId };
 };
-
-// Quick startup check
-(async () => {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return;
-    try {
-        const ips = await dns.resolve4('smtp.gmail.com');
-        console.log(`📧 Startup: smtp.gmail.com → ${ips.join(', ')}`);
-    } catch (e) {
-        console.error('❌ DNS resolve4 failed at startup:', e.message);
-    }
-})();
 
 function generateOTPTemplate(otp, userName) {
     return `

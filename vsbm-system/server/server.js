@@ -111,58 +111,6 @@ app.get('/', (req, res) => {
     });
 });
 
-// --- SMTP Debug (temporary) ---
-app.get('/debug-smtp', async (req, res) => {
-    const dns = require('dns').promises;
-    const net = require('net');
-    const results = {};
-    // 1) DNS resolve4
-    try {
-        const ips = await dns.resolve4('smtp.gmail.com');
-        results.dns_resolve4 = ips;
-    } catch (e) { results.dns_resolve4_error = e.message; }
-    // 2) DNS lookup with family 4
-    try {
-        const { address } = await dns.lookup('smtp.gmail.com', { family: 4 });
-        results.dns_lookup_v4 = address;
-    } catch (e) { results.dns_lookup_v4_error = e.message; }
-    // 3) TCP connect to resolved IP on port 587
-    const ip = results.dns_resolve4?.[0] || results.dns_lookup_v4;
-    if (ip) {
-        try {
-            await new Promise((resolve, reject) => {
-                const sock = net.createConnection({ host: ip, port: 587 });
-                const t = setTimeout(() => { sock.destroy(); reject(new Error('timeout 10s')); }, 10000);
-                sock.once('connect', () => { clearTimeout(t); results.tcp_587 = `connected to ${sock.remoteAddress}:${sock.remotePort}`; sock.destroy(); resolve(); });
-                sock.once('error', (err) => { clearTimeout(t); reject(err); });
-            });
-        } catch (e) { results.tcp_587_error = e.message; }
-        // 4) TCP connect on port 465
-        try {
-            await new Promise((resolve, reject) => {
-                const sock = net.createConnection({ host: ip, port: 465 });
-                const t = setTimeout(() => { sock.destroy(); reject(new Error('timeout 10s')); }, 10000);
-                sock.once('connect', () => { clearTimeout(t); results.tcp_465 = `connected to ${sock.remoteAddress}:${sock.remotePort}`; sock.destroy(); resolve(); });
-                sock.once('error', (err) => { clearTimeout(t); reject(err); });
-            });
-        } catch (e) { results.tcp_465_error = e.message; }
-    }
-    // 5) Quick SMTP verify
-    try {
-        const nodemailer = require('nodemailer');
-        const t = nodemailer.createTransport({
-            host: ip || 'smtp.gmail.com', port: 587, secure: false,
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
-            tls: { servername: 'smtp.gmail.com' },
-            connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 10000,
-        });
-        await t.verify();
-        results.smtp_verify = 'OK';
-        t.close();
-    } catch (e) { results.smtp_verify_error = `${e.code || ''} ${e.message}`; }
-    res.json(results);
-});
-
 // --- API Routes ---
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/customer', require('./routes/customerRoutes'));
