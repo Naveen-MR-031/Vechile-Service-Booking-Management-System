@@ -1,17 +1,23 @@
 const nodemailer = require('nodemailer');
 const net = require('net');
+const dns = require('dns').promises;
 
 console.log(`📧 Email: ${process.env.EMAIL_USER || 'NOT SET'}`);
 
 /**
- * Create a pre-connected IPv4 TCP socket to Gmail SMTP.
- * This bypasses Render's IPv6 issue entirely — nodemailer's
- * "connection" option uses the socket directly with ZERO DNS.
+ * Resolve smtp.gmail.com to IPv4 IP, then open a raw TCP socket to that IP.
+ * This guarantees zero IPv6 involvement at every layer.
  */
-function connectIPv4() {
+async function connectIPv4(port) {
+    // Step 1: Resolve hostname to IPv4 IPs (A records only)
+    const ips = await dns.resolve4('smtp.gmail.com');
+    const ip = ips[0];
+    console.log(`📧 Resolved smtp.gmail.com → ${ip}`);
+
+    // Step 2: Connect to raw IPv4 IP (no hostname = no DNS in net layer)
     return new Promise((resolve, reject) => {
-        const sock = net.createConnection({ host: 'smtp.gmail.com', port: 587, family: 4 });
-        const timer = setTimeout(() => { sock.destroy(); reject(new Error('SMTP connect timeout')); }, 10000);
+        const sock = net.createConnection({ host: ip, port });
+        const timer = setTimeout(() => { sock.destroy(); reject(new Error(`TCP connect timeout to ${ip}:${port}`)); }, 15000);
         sock.once('connect', () => { clearTimeout(timer); resolve(sock); });
         sock.once('error', (err) => { clearTimeout(timer); reject(err); });
     });
@@ -19,6 +25,7 @@ function connectIPv4() {
 
 /**
  * Send OTP email via Gmail SMTP forced over IPv4.
+ * Tries port 587 (STARTTLS) first, then port 465 (SSL) as fallback.
  */
 const sendOTPEmail = async (email, otp, userName) => {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
@@ -26,25 +33,19 @@ const sendOTPEmail = async (email, otp, userName) => {
     }
 
     console.log(`📧 Sending OTP to ${email}...`);
+    const errors = [];
 
-    // 1) TCP connect to Gmail over IPv4 (no DNS in nodemailer)
-    const sock = await connectIPv4();
-    console.log(`📧 IPv4 socket connected to ${sock.remoteAddress}:${sock.remotePort}`);
-
-    // 2) Hand the connected socket to nodemailer via "connection"
-    const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        connection: sock,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASSWORD,
-        },
-        tls: { servername: 'smtp.gmail.com' },
-    });
-
+    // Attempt 1: Port 587 with pre-connected IPv4 socket
     try {
+        const sock = await connectIPv4(587);
+        console.log(`📧 TCP connected to ${sock.remoteAddress}:587`);
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com', port: 587, secure: false,
+            connection: sock,
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
+            tls: { servername: 'smtp.gmail.com' },
+            connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 30000,
+        });
         const info = await transporter.sendMail({
             from: `"FastOnService" <${process.env.EMAIL_USER}>`,
             to: email,
@@ -52,29 +53,78 @@ const sendOTPEmail = async (email, otp, userName) => {
             html: generateOTPTemplate(otp, userName),
             text: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
         });
-        console.log(`✅ OTP sent to ${email} (${info.messageId})`);
-        return { id: info.messageId };
-    } finally {
+        console.log(`✅ OTP sent via port 587 to ${email} (${info.messageId})`);
         transporter.close();
+        return { id: info.messageId };
+    } catch (e) {
+        errors.push(`587: ${e.code || ''} ${e.message}`);
+        console.error(`⚠️ Port 587 failed:`, e.code, e.message);
     }
+
+    // Attempt 2: Port 465 (SSL) with pre-connected IPv4 socket
+    try {
+        const sock = await connectIPv4(465);
+        console.log(`📧 TCP connected to ${sock.remoteAddress}:465`);
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com', port: 465, secure: true,
+            connection: sock,
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
+            tls: { servername: 'smtp.gmail.com' },
+            connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 30000,
+        });
+        const info = await transporter.sendMail({
+            from: `"FastOnService" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `Your FastOnService Code: ${otp}`,
+            html: generateOTPTemplate(otp, userName),
+            text: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
+        });
+        console.log(`✅ OTP sent via port 465 to ${email} (${info.messageId})`);
+        transporter.close();
+        return { id: info.messageId };
+    } catch (e) {
+        errors.push(`465: ${e.code || ''} ${e.message}`);
+        console.error(`⚠️ Port 465 failed:`, e.code, e.message);
+    }
+
+    // Attempt 3: Let nodemailer handle DNS but with IPv4-first hints
+    try {
+        console.log(`📧 Attempt 3: standard nodemailer with resolved host...`);
+        const ips = await dns.resolve4('smtp.gmail.com');
+        const transporter = nodemailer.createTransport({
+            host: ips[0], port: 587, secure: false,
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
+            tls: { servername: 'smtp.gmail.com' },
+            connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 30000,
+        });
+        const info = await transporter.sendMail({
+            from: `"FastOnService" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `Your FastOnService Code: ${otp}`,
+            html: generateOTPTemplate(otp, userName),
+            text: `Your FastOnService code is: ${otp}. Valid for 10 minutes.`,
+        });
+        console.log(`✅ OTP sent via attempt 3 to ${email} (${info.messageId})`);
+        transporter.close();
+        return { id: info.messageId };
+    } catch (e) {
+        errors.push(`direct-ip: ${e.code || ''} ${e.message}`);
+        console.error(`⚠️ Attempt 3 failed:`, e.code, e.message);
+    }
+
+    const fullError = `All email attempts failed: ${errors.join(' | ')}`;
+    console.error(`❌ ${fullError}`);
+    throw new Error(fullError);
 };
 
 // Quick startup check
 (async () => {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return;
     try {
-        const sock = await connectIPv4();
-        const t = nodemailer.createTransport({
-            host: 'smtp.gmail.com', port: 587, secure: false,
-            connection: sock,
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
-            tls: { servername: 'smtp.gmail.com' },
-        });
-        await t.verify();
-        t.close();
-        console.log('✅ Gmail SMTP verified (IPv4)');
+        const ips = await dns.resolve4('smtp.gmail.com');
+        console.log(`📧 Startup: smtp.gmail.com → ${ips.join(', ')}`);
     } catch (e) {
-        console.error('❌ Gmail check failed:', e.message);
+        console.error('❌ DNS resolve4 failed at startup:', e.message);
     }
 })();
 
