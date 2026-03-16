@@ -1,37 +1,46 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns');
+const { promisify } = require('util');
+
+const resolve4 = promisify(dns.resolve4);
 
 // Log email config at startup (no secrets)
 console.log(`📧 Email config: USER=${process.env.EMAIL_USER || 'NOT SET'}, PASSWORD=${process.env.EMAIL_PASSWORD ? 'SET (' + process.env.EMAIL_PASSWORD.length + ' chars)' : 'NOT SET'}`);
 
-// Force all DNS to IPv4
-dns.setDefaultResultOrder('ipv4first');
+// Resolve Gmail SMTP to IPv4 and cache it
+let gmailIPv4 = null;
 
-// Custom lookup that strictly uses IPv4
-const ipv4Lookup = (hostname, options, callback) => {
-    dns.lookup(hostname, { family: 4 }, callback);
-};
+async function getGmailIPv4() {
+    if (gmailIPv4) return gmailIPv4;
+    try {
+        const addresses = await resolve4('smtp.gmail.com');
+        gmailIPv4 = addresses[0];
+        console.log(`📧 Resolved smtp.gmail.com to IPv4: ${gmailIPv4}`);
+        return gmailIPv4;
+    } catch (err) {
+        console.error('❌ Failed to resolve smtp.gmail.com to IPv4:', err.message);
+        return 'smtp.gmail.com'; // fallback to hostname
+    }
+}
 
-// Gmail SMTP transporter — force IPv4 to avoid IPv6 issues on Render
-const gmailTransporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-    },
-    dnsLookup: ipv4Lookup,
-    tls: {
-        servername: 'smtp.gmail.com',
-    },
-});
+// Pre-resolve on startup
+getGmailIPv4();
 
-// Verify transporter on startup
-gmailTransporter.verify()
-    .then(() => console.log('✅ Gmail SMTP transporter is ready'))
-    .catch((err) => console.error('❌ Gmail SMTP transporter verification failed:', err.message));
+function createTransporter(host) {
+    return nodemailer.createTransport({
+        host: host,
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD,
+        },
+        tls: {
+            servername: 'smtp.gmail.com',
+            rejectUnauthorized: true,
+        },
+    });
+}
 
 /**
  * Send OTP email using Gmail SMTP
@@ -42,8 +51,10 @@ const sendOTPEmail = async (email, otp, userName) => {
     if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD &&
         process.env.EMAIL_USER !== 'placeholder@gmail.com') {
         try {
-            console.log(`📧 Attempting to send OTP to ${email} from ${process.env.EMAIL_USER}...`);
-            const info = await gmailTransporter.sendMail({
+            const host = await getGmailIPv4();
+            console.log(`📧 Attempting to send OTP to ${email} via ${host}...`);
+            const transporter = createTransporter(host);
+            const info = await transporter.sendMail({
                 from: `"FastOnService" <${process.env.EMAIL_USER}>`,
                 to: email,
                 subject: `Your FastOnService Login Code: ${otp}`,
