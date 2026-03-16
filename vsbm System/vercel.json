@@ -5,17 +5,12 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "installCommand": "npm install --include=dev",
-        "buildCommand": "npx vite build",
-        "outputDirectory": "dist"
+        "distDir": "dist"
       }
     },
     {
       "src": "server/server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["server/**"]
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
