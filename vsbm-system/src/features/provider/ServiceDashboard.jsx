@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -9,6 +9,7 @@ import {
     ArrowRight, Filter, Edit2, Trash2, BarChart3, PieChart
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import io from 'socket.io-client';
 import Navbar from '../../components/layout/Navbar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -33,6 +34,8 @@ const ServiceDashboard = () => {
 
     // Accept Modal state
     const [acceptModal, setAcceptModal] = useState(null); // { bookingId, booking }
+    // Emergency popup state
+    const [emergencyPopup, setEmergencyPopup] = useState(null); // booking data from socket
     const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
     const [acceptForm, setAcceptForm] = useState({
         confirmedDate: tomorrow.toISOString().split('T')[0],
@@ -52,6 +55,33 @@ const ServiceDashboard = () => {
     } = useMockData();
 
     const providerId = currentUser?.provider_id;
+
+    // Socket connection for real-time emergency notifications
+    useEffect(() => {
+        if (!providerId) return;
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+        const serverUrl = apiUrl.replace(/\/api\/?$/, '');
+        const socket = io(serverUrl, { withCredentials: true, reconnection: true });
+
+        socket.emit('join', providerId);
+
+        socket.on('newBooking', (data) => {
+            const { booking, isEmergency } = data;
+            if (isEmergency) {
+                setEmergencyPopup(booking);
+                toast('🚨 New EMERGENCY booking!', { icon: '🔴', duration: 10000 });
+            } else {
+                toast.success('📋 New booking request received!');
+            }
+        });
+
+        socket.on('bookingStatusUpdate', () => {
+            // Data will be refreshed via polling/context
+        });
+
+        return () => socket.close();
+    }, [providerId]);
+
     const providerBookings = useMemo(() => providerId ? getBookingsByProviderId(providerId) : [], [providerId, getBookingsByProviderId, bookings]);
     const providerServices = useMemo(() => providerId ? getServicesByProviderId(providerId) : [], [providerId, getServicesByProviderId, services]);
     const providerDiscounts = useMemo(() => providerId ? getDiscountsByProviderId(providerId) : [], [providerId, getDiscountsByProviderId]);
@@ -169,6 +199,102 @@ const ServiceDashboard = () => {
 
     return (
         <div className={styles.dashboard}>
+            {/* Emergency Booking Popup */}
+            <AnimatePresence>
+                {emergencyPopup && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 9999,
+                            background: 'rgba(0,0,0,0.7)', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', padding: '20px',
+                        }}
+                        onClick={() => {}}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.8, opacity: 0 }}
+                            style={{
+                                background: 'linear-gradient(145deg, #1a1a2e, #16213e)',
+                                borderRadius: '20px', padding: '32px', maxWidth: '480px', width: '100%',
+                                border: '2px solid #ef4444', boxShadow: '0 0 60px rgba(239,68,68,0.3)',
+                            }}
+                        >
+                            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                                <div style={{
+                                    width: '64px', height: '64px', borderRadius: '50%',
+                                    background: 'rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', margin: '0 auto 16px',
+                                    animation: 'pulse 1.5s infinite',
+                                }}>
+                                    <AlertTriangle size={32} style={{ color: '#ef4444' }} />
+                                </div>
+                                <h2 style={{ color: '#ef4444', margin: '0 0 8px', fontSize: '1.5rem' }}>
+                                    🚨 Emergency Booking!
+                                </h2>
+                                <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.9rem' }}>
+                                    A customer needs immediate assistance
+                                </p>
+                            </div>
+
+                            <div style={{
+                                background: 'rgba(239,68,68,0.08)', borderRadius: '12px',
+                                padding: '16px', marginBottom: '20px', border: '1px solid rgba(239,68,68,0.2)',
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Booking ID</span>
+                                    <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{emergencyPopup.bookingId || 'New'}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Service</span>
+                                    <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{emergencyPopup.serviceType || 'Emergency Service'}</span>
+                                </div>
+                                {emergencyPopup.vehicleDetails && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Vehicle</span>
+                                        <span style={{ color: '#f1f5f9', fontWeight: 600 }}>
+                                            {emergencyPopup.vehicleDetails.make} {emergencyPopup.vehicleDetails.model}
+                                        </span>
+                                    </div>
+                                )}
+                                {emergencyPopup.customerLocation?.address && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                                            <MapPin size={12} style={{ display: 'inline', marginRight: '4px' }} />Location
+                                        </span>
+                                        <span style={{ color: '#f1f5f9', fontWeight: 600, textAlign: 'right', maxWidth: '60%' }}>
+                                            {emergencyPopup.customerLocation.address}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <Button
+                                    style={{
+                                        flex: 1, background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                                        border: 'none', padding: '14px', fontSize: '1rem', fontWeight: 700,
+                                    }}
+                                    onClick={() => {
+                                        setActiveTab('bookings');
+                                        setBookingFilter('pending');
+                                        setEmergencyPopup(null);
+                                        toast.success('Redirected to bookings. Please accept or decline.');
+                                    }}
+                                >
+                                    <CheckCircle size={18} /> View & Accept
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    style={{ flex: 1, padding: '14px', fontSize: '1rem', borderColor: '#475569' }}
+                                    onClick={() => setEmergencyPopup(null)}
+                                >
+                                    Dismiss
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {/* Top Navbar */}
             <Navbar variant="dashboard" />
 
