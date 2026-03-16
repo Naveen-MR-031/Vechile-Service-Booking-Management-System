@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-// In production (Vercel), API is on the same domain at /api
+// VITE_API_URL is set in Vercel env vars pointing to Render backend
 // In development, use localhost:5001
-const API_BASE = import.meta.env.VITE_API_URL || (
-    import.meta.env.PROD ? '/api' : 'http://localhost:5001/api'
-);
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
     baseURL: API_BASE,

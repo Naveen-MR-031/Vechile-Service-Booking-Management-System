@@ -101,18 +101,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- Ensure DB is connected (for Vercel serverless cold starts) ---
-app.use(async (req, res, next) => {
-    try {
-        if (!isDbConnected) {
-            await connectDB();
-        }
-        next();
-    } catch (err) {
-        res.status(500).json({ success: false, message: 'Database connection failed' });
-    }
-});
-
 // --- Health Check ---
 app.get('/', (req, res) => {
     res.json({
@@ -175,20 +163,17 @@ app.use((err, req, res, next) => {
     });
 });
 
-// --- Start Server (local dev only) ---
+// --- Start Server ---
 const PORT = process.env.PORT || 5001;
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    const startServer = async () => {
-        await connectDB();
-        server.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
-            console.log(`📡 API: http://localhost:${PORT}`);
-            console.log(`🌐 Frontend: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
-        });
-    };
-    startServer();
-}
+const startServer = async () => {
+    await connectDB();
+    server.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`📡 API: http://localhost:${PORT}`);
+        console.log(`🌐 Frontend: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+    });
+};
+startServer();
 
-// Export the Express API for Vercel
 module.exports = app;
