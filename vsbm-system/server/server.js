@@ -50,11 +50,13 @@ app.use(express.urlencoded({ extended: true }));
 app.set('io', io);
 
 // --- Database Connection ---
-const connectDB = async (retries = 5) => {
+let isDbConnected = false;
+const connectDB = async (retries = 3) => {
+    if (isDbConnected) return;
     const mongoURI = process.env.MONGODB_URI;
     if (!mongoURI) {
-        console.error('❌ MONGODB_URI is not set in .env');
-        process.exit(1);
+        console.error('❌ MONGODB_URI is not set');
+        throw new Error('MONGODB_URI is not set');
     }
 
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -66,6 +68,7 @@ const connectDB = async (retries = 5) => {
                 family: 4, // Force IPv4
             });
             console.log('✅ MongoDB Connected Successfully');
+            isDbConnected = true;
             return;
         } catch (err) {
             console.error(`❌ Attempt ${attempt} failed:`, err.message);
@@ -76,8 +79,8 @@ const connectDB = async (retries = 5) => {
             }
         }
     }
-    console.error('❌ All MongoDB connection attempts failed. Exiting.');
-    process.exit(1);
+    console.error('❌ All MongoDB connection attempts failed.');
+    throw new Error('MongoDB connection failed');
 };
 
 // --- Socket.io Events ---
@@ -96,6 +99,18 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('🔌 Client disconnected:', socket.id);
     });
+});
+
+// --- Ensure DB is connected (for Vercel serverless cold starts) ---
+app.use(async (req, res, next) => {
+    try {
+        if (!isDbConnected) {
+            await connectDB();
+        }
+        next();
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
 });
 
 // --- Health Check ---
@@ -160,10 +175,9 @@ app.use((err, req, res, next) => {
     });
 });
 
-// --- Start Server or Export for Serverless ---
+// --- Start Server (local dev only) ---
 const PORT = process.env.PORT || 5001;
 
-// Only start the server if we're not running in a Vercel Serverless environment
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     const startServer = async () => {
         await connectDB();
@@ -174,16 +188,6 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
         });
     };
     startServer();
-} else {
-    // In Vercel, wait for the DB to connect on the first cold start request
-    let isDbConnected = false;
-    app.use(async (req, res, next) => {
-        if (!isDbConnected) {
-            await connectDB();
-            isDbConnected = true;
-        }
-        next();
-    });
 }
 
 // Export the Express API for Vercel
