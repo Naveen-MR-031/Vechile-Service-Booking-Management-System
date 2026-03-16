@@ -1,5 +1,8 @@
 const nodemailer = require('nodemailer');
 
+// Log email config at startup (no secrets)
+console.log(`📧 Email config: USER=${process.env.EMAIL_USER || 'NOT SET'}, PASSWORD=${process.env.EMAIL_PASSWORD ? 'SET (' + process.env.EMAIL_PASSWORD.length + ' chars)' : 'NOT SET'}`);
+
 // Gmail SMTP transporter (works for ALL email addresses)
 const gmailTransporter = nodemailer.createTransport({
     service: 'gmail',
@@ -8,6 +11,11 @@ const gmailTransporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASSWORD,
     },
 });
+
+// Verify transporter on startup
+gmailTransporter.verify()
+    .then(() => console.log('✅ Gmail SMTP transporter is ready'))
+    .catch((err) => console.error('❌ Gmail SMTP transporter verification failed:', err.message));
 
 /**
  * Send OTP email using Gmail SMTP
@@ -18,6 +26,7 @@ const sendOTPEmail = async (email, otp, userName) => {
     if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD &&
         process.env.EMAIL_USER !== 'placeholder@gmail.com') {
         try {
+            console.log(`📧 Attempting to send OTP to ${email} from ${process.env.EMAIL_USER}...`);
             const info = await gmailTransporter.sendMail({
                 from: `"FastOnService" <${process.env.EMAIL_USER}>`,
                 to: email,
@@ -33,11 +42,12 @@ const sendOTPEmail = async (email, otp, userName) => {
             console.log(`✅ OTP email sent via Gmail SMTP to ${email} (ID: ${info.messageId})`);
             return { id: info.messageId };
         } catch (gmailError) {
-            console.error('⚠️ Gmail SMTP failed...', gmailError.message);
+            console.error('⚠️ Gmail SMTP failed:', gmailError.code, gmailError.message);
+            console.error('⚠️ Full error:', JSON.stringify({ code: gmailError.code, command: gmailError.command, response: gmailError.response }));
             throw new Error(`Failed to send OTP email: ${gmailError.message}`);
         }
     } else {
-        console.error('⚠️ Gmail credentials not configured correctly.');
+        console.error('⚠️ Gmail credentials not configured. EMAIL_USER:', process.env.EMAIL_USER ? 'set' : 'missing', 'EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'set' : 'missing');
         throw new Error('Email credentials not configured.');
     }
 };
