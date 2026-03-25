@@ -187,20 +187,32 @@ const CustomerDashboard = () => {
 
 
     const handleApproveIssue = async (issueId) => {
-        await approveIssue(issueId);
-        toast.success('Issue approved! Cost will be added to your booking.');
+        try {
+            await approveIssue(issueId);
+            toast.success('Issue approved! Cost will be added to your booking.');
+        } catch (err) {
+            toast.error('Failed to approve issue');
+        }
     };
 
     const handleDeclineIssue = async (issueId) => {
-        await declineIssue(issueId);
-        toast.success('Issue declined.');
+        try {
+            await declineIssue(issueId);
+            toast.success('Issue declined.');
+        } catch (err) {
+            toast.error('Failed to decline issue');
+        }
     };
 
     const handleCancelBooking = async (bookingId) => {
         if (window.confirm('Are you sure you want to cancel this booking?')) {
-            await cancelBooking(bookingId);
-            toast.success('Booking cancelled.');
-            setSelectedBooking(null);
+            try {
+                await cancelBooking(bookingId);
+                toast.success('Booking cancelled.');
+                setSelectedBooking(null);
+            } catch (err) {
+                toast.error('Failed to cancel booking');
+            }
         }
     };
 
@@ -210,16 +222,24 @@ const CustomerDashboard = () => {
             toast.error('Please fill in all required fields');
             return;
         }
-        await addVehicle(vehicleForm);
-        toast.success('Vehicle added successfully!');
-        setShowAddVehicle(false);
-        setVehicleForm({ make: '', model: '', year: new Date().getFullYear(), registration_number: '', vehicle_type: 'Sedan', fuel_type: 'Petrol', color: '' });
+        try {
+            await addVehicle(vehicleForm);
+            toast.success('Vehicle added successfully!');
+            setShowAddVehicle(false);
+            setVehicleForm({ make: '', model: '', year: new Date().getFullYear(), registration_number: '', vehicle_type: 'Sedan', fuel_type: 'Petrol', color: '' });
+        } catch (err) {
+            toast.error('Failed to add vehicle');
+        }
     };
 
     const handleDeleteVehicle = async (vehicleId) => {
         if (window.confirm('Remove this vehicle?')) {
-            await deleteVehicle(vehicleId);
-            toast.success('Vehicle removed.');
+            try {
+                await deleteVehicle(vehicleId);
+                toast.success('Vehicle removed.');
+            } catch (err) {
+                toast.error('Failed to remove vehicle');
+            }
         }
     };
 
@@ -942,9 +962,13 @@ const BookingDetail = ({ booking, onBack, providers, getStatusInfo, getIssuesByB
 
     const handleSend = async () => {
         if (!messageInput.trim()) return;
-        await sendMessage(booking.booking_id, messageInput);
-        setMessageInput('');
-        toast.success('Message sent!');
+        try {
+            await sendMessage(booking.booking_id, messageInput);
+            setMessageInput('');
+            toast.success('Message sent!');
+        } catch (err) {
+            toast.error('Failed to send message');
+        }
     };
 
     return (

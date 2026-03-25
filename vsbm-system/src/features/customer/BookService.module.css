@@ -372,10 +372,15 @@
     padding: 12px 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    background: var(--input-bg);
+    background: var(--input);
     color: var(--text);
     font-size: var(--text-sm);
     transition: border-color 0.2s;
+    color-scheme: dark;
+}
+
+[data-theme="light"] .formInput {
+    color-scheme: light;
 }
 
 .formInput:focus {
@@ -388,11 +393,16 @@
     color: var(--text-muted);
 }
 
+.formInput option {
+    background: var(--surface);
+    color: var(--text);
+}
+
 .formTextarea {
     padding: 12px 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    background: var(--input-bg);
+    background: var(--input);
     color: var(--text);
     font-size: var(--text-sm);
     resize: vertical;

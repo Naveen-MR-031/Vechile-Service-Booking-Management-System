@@ -56,7 +56,8 @@ const ServiceDashboard = () => {
 
     const providerId = currentUser?.provider_id;
 
-    // Socket connection for real-time emergency notifications
+    // Socket connection for emergency booking popup only
+    // (Status sync is handled centrally by MockDataContext)
     useEffect(() => {
         if (!providerId) return;
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
@@ -73,10 +74,6 @@ const ServiceDashboard = () => {
             } else {
                 toast.success('📋 New booking request received!');
             }
-        });
-
-        socket.on('bookingStatusUpdate', () => {
-            // Data will be refreshed via polling/context
         });
 
         return () => socket.close();
@@ -113,8 +110,12 @@ const ServiceDashboard = () => {
 
 
     const handleStatusUpdate = async (bookingId, newStatus) => {
-        await updateBookingStatus(bookingId, newStatus);
-        toast.success(`Status updated to ${getStatusInfo(newStatus)?.name || newStatus}`);
+        try {
+            await updateBookingStatus(bookingId, newStatus);
+            toast.success(`Status updated to ${getStatusInfo(newStatus)?.name || newStatus}`);
+        } catch (err) {
+            toast.error('Failed to update status');
+        }
     };
 
     const openAcceptModal = (booking) => {
@@ -126,14 +127,18 @@ const ServiceDashboard = () => {
         if (!acceptForm.confirmedDate || !acceptForm.pickUpDate || !acceptForm.dropOffDate) {
             toast.error('Please fill all date fields'); return;
         }
-        await updateBookingStatus(acceptModal.bookingId, 'ACCEPTED', {
-            confirmedDate: acceptForm.confirmedDate,
-            pickUpDate: acceptForm.pickUpDate,
-            dropOffDate: acceptForm.dropOffDate,
-            serviceProviderNotes: acceptForm.serviceProviderNotes
-        });
-        toast.success('Booking accepted! Customer has been notified.');
-        setAcceptModal(null);
+        try {
+            await updateBookingStatus(acceptModal.bookingId, 'ACCEPTED', {
+                confirmedDate: acceptForm.confirmedDate,
+                pickUpDate: acceptForm.pickUpDate,
+                dropOffDate: acceptForm.dropOffDate,
+                serviceProviderNotes: acceptForm.serviceProviderNotes
+            });
+            toast.success('Booking accepted! Customer has been notified.');
+            setAcceptModal(null);
+        } catch (err) {
+            toast.error('Failed to accept booking');
+        }
     };
 
     const handleDeclineBooking = (bookingId) => handleStatusUpdate(bookingId, 'DECLINED');
@@ -141,27 +146,35 @@ const ServiceDashboard = () => {
     const handleAddIssue = async (e) => {
         e.preventDefault();
         if (!issueForm.issue_description) { toast.error('Description is required'); return; }
-        await addIssue(showAddIssue, issueForm);
-        toast.success('Issue reported to customer');
-        setShowAddIssue(null);
-        setIssueForm({ issue_description: '', severity: 'Moderate', issue_type: 'Mechanical', estimated_additional_cost: 0 });
+        try {
+            await addIssue(showAddIssue, issueForm);
+            toast.success('Issue reported to customer');
+            setShowAddIssue(null);
+            setIssueForm({ issue_description: '', severity: 'Moderate', issue_type: 'Mechanical', estimated_additional_cost: 0 });
+        } catch (err) {
+            toast.error('Failed to report issue');
+        }
     };
 
     const handleSaveService = async (e) => {
         e.preventDefault();
         if (!serviceForm.service_name || !serviceForm.base_price) { toast.error('Name and price are required'); return; }
         
-        if (editingServiceId) {
-            await updateService(editingServiceId, serviceForm);
-            toast.success('Service updated!');
-        } else {
-            await addService(serviceForm);
-            toast.success('Service added!');
+        try {
+            if (editingServiceId) {
+                await updateService(editingServiceId, serviceForm);
+                toast.success('Service updated!');
+            } else {
+                await addService(serviceForm);
+                toast.success('Service added!');
+            }
+            
+            setShowAddService(false);
+            setEditingServiceId(null);
+            setServiceForm({ service_name: '', service_description: '', base_price: 0, estimated_duration: 60, service_category_id: 1, price_type: 'Fixed' });
+        } catch (err) {
+            toast.error('Failed to save service');
         }
-        
-        setShowAddService(false);
-        setEditingServiceId(null);
-        setServiceForm({ service_name: '', service_description: '', base_price: 0, estimated_duration: 60, service_category_id: 1, price_type: 'Fixed' });
     };
 
     const handleEditServiceClick = (service) => {
@@ -180,10 +193,14 @@ const ServiceDashboard = () => {
     const handleAddDiscount = async (e) => {
         e.preventDefault();
         if (!discountForm.description) { toast.error('Description is required'); return; }
-        await createDiscount(discountForm);
-        toast.success('Discount created!');
-        setShowAddDiscount(false);
-        setDiscountForm({ code: '', type: 'Percentage', value: 10, min_order: 0, max_discount: 0, description: '', valid_from: '', valid_until: '' });
+        try {
+            await createDiscount(discountForm);
+            toast.success('Discount created!');
+            setShowAddDiscount(false);
+            setDiscountForm({ code: '', type: 'Percentage', value: 10, min_order: 0, max_discount: 0, description: '', valid_from: '', valid_until: '' });
+        } catch (err) {
+            toast.error('Failed to create discount');
+        }
     };
 
     if (loading) return <Loader />;
@@ -923,9 +940,13 @@ const ProviderBookingDetail = ({ booking, onBack, getStatusInfo, getIssuesByBook
 
     const handleSend = async () => {
         if (!messageInput.trim()) return;
-        await sendMessage(booking.booking_id, messageInput);
-        setMessageInput('');
-        toast.success('Message sent!');
+        try {
+            await sendMessage(booking.booking_id, messageInput);
+            setMessageInput('');
+            toast.success('Message sent!');
+        } catch (err) {
+            toast.error('Failed to send message');
+        }
     };
 
     return (

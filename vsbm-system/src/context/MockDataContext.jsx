@@ -7,8 +7,9 @@
  * Field mappings: backend → frontend convenience names
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { authAPI, customerAPI, providerAPI, publicAPI } from '../services/api';
+import io from 'socket.io-client';
 
 const MockDataContext = createContext();
 
@@ -130,19 +131,31 @@ const transformProvider = (p) => {
     featured_provider: true,
 };};
 
-const transformService = (s) => ({
-    service_id: s._id,
-    provider_id: s.serviceProviderId?._id || s.serviceProviderId,
-    service_name: s.name,
-    service_description: s.description,
-    service_category_id: s.category,
-    category_name: s.category,
-    base_price: s.basePrice,
-    estimated_duration: parseInt(s.estimatedDuration) * 60 || 60, // convert hours to minutes
-    price_type: 'Fixed',
-    is_active: s.isActive,
-    popular_service: true,
-});
+const transformService = (s) => {
+    // Parse estimated duration: could be "2 hours", "120", or a number
+    let durationMinutes = 60;
+    if (s.estimatedDuration) {
+        const parsed = parseInt(s.estimatedDuration);
+        if (!isNaN(parsed)) {
+            // If it contains "hour", treat as hours → convert to minutes
+            const durStr = String(s.estimatedDuration).toLowerCase();
+            durationMinutes = durStr.includes('hour') ? parsed * 60 : parsed;
+        }
+    }
+    return {
+        service_id: s._id,
+        provider_id: s.serviceProviderId?._id || s.serviceProviderId,
+        service_name: s.name,
+        service_description: s.description,
+        service_category_id: s.category,
+        category_name: s.category,
+        base_price: Number(s.basePrice) || 0,
+        estimated_duration: durationMinutes,
+        price_type: 'Fixed',
+        is_active: s.isActive,
+        popular_service: true,
+    };
+};
 
 const transformBooking = (b) => ({
     booking_id: b._id,
@@ -153,7 +166,7 @@ const transformBooking = (b) => ({
     booking_date: b.preferredDate,
     preferred_date: b.preferredDate ? new Date(b.preferredDate).toLocaleDateString('en-IN') : '',
     current_status: BACKEND_TO_FRONTEND_STATUS[b.status] || b.status?.toUpperCase() || 'PENDING',
-    total_amount: b.finalCost || b.estimatedCost || 0,
+    total_amount: Number(b.finalCost) || Number(b.estimatedCost) || 0,
     payment_status: b.paymentStatus === 'paid' ? 'Paid' : 'Pending',
     special_instructions: b.customerNotes || b.description,
     booking_type: b.preferredTimeSlot || 'Drop-off',
@@ -303,13 +316,32 @@ export const MockDataProvider = ({ children }) => {
 
                 if (token && storedUser) {
                     const user = JSON.parse(storedUser);
-                    setCurrentUser(user);
+
+                    // Enrich user object with derived fields (same as login)
+                    let enrichedUser;
+                    if (user.userType === 'serviceProvider') {
+                        enrichedUser = {
+                            ...user,
+                            provider_id: user.id || user._id,
+                            company_name: user.businessName || user.name,
+                            role: 'provider',
+                        };
+                    } else {
+                        enrichedUser = {
+                            ...user,
+                            customer_id: user.id || user._id,
+                            first_name: user.name?.split(' ')[0] || user.name,
+                            last_name: user.name?.split(' ').slice(1).join(' ') || '',
+                            role: 'customer',
+                        };
+                    }
+                    setCurrentUser(enrichedUser);
 
                     // Fetch role-specific data
                     if (user.userType === 'customer') {
-                        await loadCustomerData(user);
+                        await loadCustomerData(enrichedUser);
                     } else if (user.userType === 'serviceProvider') {
-                        await loadProviderData(user);
+                        await loadProviderData(enrichedUser);
                     }
                 }
 
@@ -373,6 +405,126 @@ export const MockDataProvider = ({ children }) => {
             console.error('Load provider data error:', err);
         }
     };
+
+    // ==================== REAL-TIME STATUS SYNC ====================
+    const statusNotificationRef = useRef(null);
+    const [statusNotification, setStatusNotification] = useState(null);
+
+    // Socket.io connection for real-time updates
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const userId = currentUser.customer_id || currentUser.provider_id || currentUser.id;
+        if (!userId) return;
+
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+        const serverUrl = apiUrl.replace(/\/api\/?$/, '');
+        const socket = io(serverUrl, { withCredentials: true, reconnection: true, reconnectionDelay: 2000, reconnectionAttempts: 10 });
+
+        socket.emit('join', userId);
+
+        // Listen for status updates (customer receives these from provider actions)
+        socket.on('bookingStatusUpdate', (data) => {
+            const { bookingId, status, booking } = data;
+            const frontendStatus = BACKEND_TO_FRONTEND_STATUS[status] || status?.toUpperCase() || status;
+
+            setBookings(prev => {
+                const existingBooking = prev.find(b => b.booking_id === bookingId || b.booking_id === booking?._id);
+                const oldStatus = existingBooking?.current_status;
+
+                // Show notification if status actually changed
+                if (existingBooking && oldStatus !== frontendStatus) {
+                    const oldInfo = STATUS_MAP[oldStatus] || { name: oldStatus };
+                    const newInfo = STATUS_MAP[frontendStatus] || STATUS_MAP[status] || { name: frontendStatus };
+                    setStatusNotification({
+                        bookingNumber: existingBooking.booking_number,
+                        oldStatus: oldInfo.name || oldStatus,
+                        newStatus: newInfo.name || frontendStatus,
+                        newColor: newInfo.color || '#3B82F6',
+                        timestamp: Date.now()
+                    });
+                }
+
+                return prev.map(b => {
+                    if (b.booking_id === bookingId || b.booking_id === booking?._id) {
+                        return {
+                            ...b,
+                            current_status: frontendStatus,
+                            status_history: [...b.status_history, { status: frontendStatus, timestamp: new Date().toISOString() }]
+                        };
+                    }
+                    return b;
+                });
+            });
+        });
+
+        // Listen for new bookings (provider receives these)
+        socket.on('newBooking', (data) => {
+            if (currentUser.role === 'provider' || currentUser.userType === 'serviceProvider') {
+                // Refresh bookings to get the new one
+                providerAPI.getBookings().then(res => {
+                    setBookings((res.data?.data || []).map(transformBooking));
+                }).catch(() => {});
+            }
+        });
+
+        // Listen for issue reports
+        socket.on('issueReported', (data) => {
+            if (data.issue) {
+                setIssues(prev => [...prev, transformIssue(data.issue)]);
+            }
+        });
+
+        return () => socket.close();
+    }, [currentUser?.customer_id, currentUser?.provider_id, currentUser?.id]);
+
+    // Polling fallback: refresh bookings every 30 seconds
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const poll = async () => {
+            try {
+                const isProvider = currentUser.role === 'provider' || currentUser.userType === 'serviceProvider';
+                const api = isProvider ? providerAPI : customerAPI;
+                const res = await api.getBookings();
+                const newBookings = (res.data?.data || []).map(transformBooking);
+
+                // Check for status changes against current bookings ref
+                setBookings(prev => {
+                    newBookings.forEach(nb => {
+                        const old = prev.find(b => b.booking_id === nb.booking_id);
+                        if (old && old.current_status !== nb.current_status) {
+                            const oldInfo = STATUS_MAP[old.current_status] || { name: old.current_status };
+                            const newInfo = STATUS_MAP[nb.current_status] || { name: nb.current_status };
+                            // Use setTimeout to defer notification state update outside of setBookings
+                            setTimeout(() => {
+                                setStatusNotification({
+                                    bookingNumber: nb.booking_number,
+                                    oldStatus: oldInfo.name || old.current_status,
+                                    newStatus: newInfo.name || nb.current_status,
+                                    newColor: newInfo.color || '#3B82F6',
+                                    timestamp: Date.now()
+                                });
+                            }, 0);
+                        }
+                    });
+                    return newBookings;
+                });
+            } catch (err) {
+                // Silently fail — will retry next interval
+            }
+        };
+
+        const interval = setInterval(poll, 30000);
+        return () => clearInterval(interval);
+    }, [currentUser?.customer_id, currentUser?.provider_id, currentUser?.role]);
+
+    // Auto-dismiss status notification after 6 seconds
+    useEffect(() => {
+        if (!statusNotification) return;
+        const timer = setTimeout(() => setStatusNotification(null), 6000);
+        return () => clearTimeout(timer);
+    }, [statusNotification]);
 
     // ==================== AUTH ====================
     const loginCustomer = async (email, password) => {
@@ -761,6 +913,7 @@ export const MockDataProvider = ({ children }) => {
         try {
             const payload = {
                 serviceProviderId: bookingData.provider_id,
+                vehicleId: bookingData.vehicle_id || undefined,
                 services: bookingData.services?.map(s => ({
                     serviceId: s.service_id,
                     serviceName: s.service_name,
@@ -880,6 +1033,8 @@ export const MockDataProvider = ({ children }) => {
         reviews,
         serviceCategories,
         bookingStatuses,
+        statusNotification,
+        setStatusNotification,
 
         // Auth
         loginCustomer,

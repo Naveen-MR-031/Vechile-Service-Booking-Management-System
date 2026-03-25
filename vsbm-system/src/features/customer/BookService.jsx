@@ -21,7 +21,8 @@ const BookService = () => {
         services: allServices,
         createBooking,
         currentUser,
-        loading
+        loading,
+        getVehiclesByCustomerId
     } = useMockData();
 
     const initialProviderId = searchParams.get('provider') || '';
@@ -31,6 +32,7 @@ const BookService = () => {
         serviceProviderId: initialProviderId,
         serviceId: '',
         serviceType: '',
+        selectedVehicleId: '',
         vehicleDetails: {
             make: '',
             model: '',
@@ -48,6 +50,38 @@ const BookService = () => {
     });
 
     const [availableServices, setAvailableServices] = useState([]);
+
+    // Fetch saved vehicles for the logged-in customer
+    const customerId = currentUser?.customer_id;
+    const userVehicles = customerId ? getVehiclesByCustomerId(customerId) : [];
+
+    // When a saved vehicle is selected, auto-fill all vehicle fields
+    const handleVehicleSelect = useCallback((vehicleId) => {
+        if (vehicleId === 'new') {
+            setFormData(prev => ({
+                ...prev,
+                selectedVehicleId: 'new',
+                vehicleDetails: { make: '', model: '', registrationNumber: '', year: new Date().getFullYear(), vehicleType: 'Sedan', fuelType: 'Petrol', mileage: '' }
+            }));
+            return;
+        }
+        const vehicle = userVehicles.find(v => v.vehicle_id === vehicleId);
+        if (vehicle) {
+            setFormData(prev => ({
+                ...prev,
+                selectedVehicleId: vehicleId,
+                vehicleDetails: {
+                    make: vehicle.make || vehicle.vehicle_make || '',
+                    model: vehicle.model || vehicle.vehicle_model || '',
+                    registrationNumber: vehicle.registration_number || vehicle.license_plate || '',
+                    year: vehicle.year || vehicle.vehicle_year || new Date().getFullYear(),
+                    vehicleType: vehicle.vehicle_type || 'Sedan',
+                    fuelType: vehicle.fuel_type || 'Petrol',
+                    mileage: vehicle.mileage || vehicle.current_mileage || ''
+                }
+            }));
+        }
+    }, [userVehicles]);
     const [estimatedCost, setEstimatedCost] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -119,7 +153,7 @@ const BookService = () => {
             const newBooking = {
                 customer_id: currentUser.customer_id,
                 provider_id: formData.serviceProviderId,
-                vehicle_id: null,
+                vehicle_id: formData.selectedVehicleId && formData.selectedVehicleId !== 'new' ? formData.selectedVehicleId : null,
                 booking_type: formData.bookingType,
                 current_status: "PENDING",
                 booking_date: new Date().toISOString(),
@@ -294,49 +328,83 @@ const BookService = () => {
                             {/* Vehicle Details */}
                             <div className={styles.formSection}>
                                 <h3><Car size={18} /> Vehicle Information</h3>
-                                <div className={styles.formGrid}>
-                                    <div className={styles.formGroup}>
-                                        <label>Make *</label>
-                                        <input className={styles.formInput} name="vehicleDetails.make" placeholder="e.g. Honda" value={formData.vehicleDetails.make} onChange={handleChange} required />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Model *</label>
-                                        <input className={styles.formInput} name="vehicleDetails.model" placeholder="e.g. City" value={formData.vehicleDetails.model} onChange={handleChange} required />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Registration *</label>
-                                        <input className={styles.formInput} name="vehicleDetails.registrationNumber" placeholder="e.g. KA-01-AB-1234" value={formData.vehicleDetails.registrationNumber} onChange={handleChange} required />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Year</label>
-                                        <input className={styles.formInput} type="number" name="vehicleDetails.year" min="1990" max={new Date().getFullYear() + 1} value={formData.vehicleDetails.year} onChange={handleChange} />
-                                    </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Vehicle Type</label>
-                                        <select className={styles.formInput} name="vehicleDetails.vehicleType" value={formData.vehicleDetails.vehicleType} onChange={handleChange}>
-                                            <option value="Sedan">Sedan</option>
-                                            <option value="SUV">SUV</option>
-                                            <option value="Hatchback">Hatchback</option>
-                                            <option value="Bike">Bike</option>
-                                            <option value="Scooter">Scooter</option>
-                                            <option value="Truck">Truck</option>
+
+                                {/* Vehicle Selection Dropdown */}
+                                {userVehicles.length > 0 && (
+                                    <div className={styles.formGroup} style={{ marginBottom: '16px' }}>
+                                        <label>Select Your Vehicle *</label>
+                                        <select
+                                            className={styles.formInput}
+                                            value={formData.selectedVehicleId}
+                                            onChange={(e) => handleVehicleSelect(e.target.value)}
+                                        >
+                                            <option value="">-- Choose a saved vehicle --</option>
+                                            {userVehicles.map(v => (
+                                                <option key={v.vehicle_id} value={v.vehicle_id}>
+                                                    {v.make || v.vehicle_make} {v.model || v.vehicle_model} — {v.registration_number || v.license_plate} ({v.year || v.vehicle_year})
+                                                </option>
+                                            ))}
+                                            <option value="new">+ Enter new vehicle manually</option>
                                         </select>
                                     </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Fuel Type</label>
-                                        <select className={styles.formInput} name="vehicleDetails.fuelType" value={formData.vehicleDetails.fuelType} onChange={handleChange}>
-                                            <option value="Petrol">Petrol</option>
-                                            <option value="Diesel">Diesel</option>
-                                            <option value="Electric">Electric (EV)</option>
-                                            <option value="CNG">CNG</option>
-                                            <option value="Hybrid">Hybrid</option>
-                                        </select>
+                                )}
+
+                                {/* Show vehicle summary if a saved vehicle is selected */}
+                                {formData.selectedVehicleId && formData.selectedVehicleId !== 'new' && (
+                                    <div style={{ padding: '14px 18px', background: 'rgba(59, 130, 246, 0.08)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                        <Car size={20} style={{ color: 'var(--secondary)' }} />
+                                        <span style={{ fontWeight: 600 }}>{formData.vehicleDetails.make} {formData.vehicleDetails.model}</span>
+                                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>| {formData.vehicleDetails.registrationNumber}</span>
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>| {formData.vehicleDetails.vehicleType} · {formData.vehicleDetails.fuelType} · {formData.vehicleDetails.year}</span>
                                     </div>
-                                    <div className={styles.formGroup}>
-                                        <label>Mileage (km)</label>
-                                        <input className={styles.formInput} type="number" name="vehicleDetails.mileage" placeholder="e.g. 45000" value={formData.vehicleDetails.mileage} onChange={handleChange} />
+                                )}
+
+                                {/* Manual entry fields - only show when no saved vehicles OR "new" is selected */}
+                                {(userVehicles.length === 0 || formData.selectedVehicleId === 'new') && (
+                                    <div className={styles.formGrid}>
+                                        <div className={styles.formGroup}>
+                                            <label>Make *</label>
+                                            <input className={styles.formInput} name="vehicleDetails.make" placeholder="e.g. Honda" value={formData.vehicleDetails.make} onChange={handleChange} required />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Model *</label>
+                                            <input className={styles.formInput} name="vehicleDetails.model" placeholder="e.g. City" value={formData.vehicleDetails.model} onChange={handleChange} required />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Registration *</label>
+                                            <input className={styles.formInput} name="vehicleDetails.registrationNumber" placeholder="e.g. KA-01-AB-1234" value={formData.vehicleDetails.registrationNumber} onChange={handleChange} required />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Year</label>
+                                            <input className={styles.formInput} type="number" name="vehicleDetails.year" min="1990" max={new Date().getFullYear() + 1} value={formData.vehicleDetails.year} onChange={handleChange} />
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Vehicle Type</label>
+                                            <select className={styles.formInput} name="vehicleDetails.vehicleType" value={formData.vehicleDetails.vehicleType} onChange={handleChange}>
+                                                <option value="Sedan">Sedan</option>
+                                                <option value="SUV">SUV</option>
+                                                <option value="Hatchback">Hatchback</option>
+                                                <option value="Bike">Bike</option>
+                                                <option value="Scooter">Scooter</option>
+                                                <option value="Truck">Truck</option>
+                                            </select>
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Fuel Type</label>
+                                            <select className={styles.formInput} name="vehicleDetails.fuelType" value={formData.vehicleDetails.fuelType} onChange={handleChange}>
+                                                <option value="Petrol">Petrol</option>
+                                                <option value="Diesel">Diesel</option>
+                                                <option value="Electric">Electric (EV)</option>
+                                                <option value="CNG">CNG</option>
+                                                <option value="Hybrid">Hybrid</option>
+                                            </select>
+                                        </div>
+                                        <div className={styles.formGroup}>
+                                            <label>Mileage (km)</label>
+                                            <input className={styles.formInput} type="number" name="vehicleDetails.mileage" placeholder="e.g. 45000" value={formData.vehicleDetails.mileage} onChange={handleChange} />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Booking Type */}

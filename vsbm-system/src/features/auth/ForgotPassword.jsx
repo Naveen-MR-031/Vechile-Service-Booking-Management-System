@@ -5,6 +5,7 @@ import { Mail, ArrowRight, ArrowLeft, KeyRound, Lock, CheckCircle, Loader2 } fro
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { authAPI } from '../../services/api';
+import { useMockData } from '../../context/MockDataContext';
 import { toast } from 'react-hot-toast';
 import styles from './Login.module.css';
 
@@ -141,9 +142,20 @@ const ForgotPassword = () => {
         setIsLoading(true);
         setErrors({});
         try {
-            await authAPI.resetPassword({ email, otp: otp.join(''), newPassword });
-            toast.success('Password reset successful!');
-            setStep('done');
+            const res = await authAPI.resetPassword({ email, otp: otp.join(''), newPassword });
+            toast.success('Password reset successful! Logging you in...');
+
+            // Auto-login: store token and user, redirect to dashboard
+            if (res.data.token && res.data.user) {
+                localStorage.setItem('token', res.data.token);
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+                const dest = res.data.user.userType === 'serviceProvider' ? '/provider/dashboard' : '/customer/dashboard';
+                // Hard reload to reinitialize MockDataContext with new token
+                window.location.href = dest;
+            } else {
+                // Fallback: redirect to login if token not returned
+                setStep('done');
+            }
         } catch (err) {
             const msg = err.response?.data?.message || 'Reset failed';
             toast.error(msg);

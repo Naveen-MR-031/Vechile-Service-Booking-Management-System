@@ -1,10 +1,19 @@
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { sendOTPEmail } = require('../services/emailService');
+
+// Generate cryptographically secure 6-digit OTP
+const generateOTP = () => {
+    return crypto.randomInt(100000, 999999).toString();
+};
 
 // Generate JWT Token
 const generateToken = (id) => {
+    if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured');
+    }
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || '24h'
     });
@@ -18,6 +27,12 @@ exports.register = async (req, res) => {
 
         if (!otp) {
             return res.status(400).json({ success: false, message: 'OTP is required' });
+        }
+
+        // Validate password strength
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{10,}$/;
+        if (!strongPasswordRegex.test(password)) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 10 characters with 1 uppercase, 1 lowercase, and 1 special character' });
         }
 
         const otpRecord = await OTP.findOne({ email: email.toLowerCase(), otp });
@@ -75,7 +90,7 @@ exports.register = async (req, res) => {
         });
     } catch (err) {
         console.error('Register error:', err);
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: 'Registration failed. Please try again.' });
     }
 };
 
@@ -181,7 +196,7 @@ exports.sendOTPAfterLogin = async (req, res) => {
         }
 
         // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = generateOTP();
 
         // Remove existing OTPs and save new one
         await OTP.deleteMany({ email: user.email.toLowerCase() });
@@ -241,7 +256,7 @@ exports.sendOTP = async (req, res) => {
             return res.status(429).json({ success: false, message: 'Please wait 60 seconds before requesting a new OTP' });
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = generateOTP();
         await OTP.deleteMany({ email: email.toLowerCase() });
         await OTP.create({ email: email.toLowerCase(), otp, purpose: 'verification' });
 
@@ -413,7 +428,7 @@ exports.forgotPassword = async (req, res) => {
             return res.status(429).json({ success: false, message: 'Please wait 60 seconds before requesting again.' });
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = generateOTP();
         await OTP.deleteMany({ email: user.email.toLowerCase() });
         await OTP.create({ email: user.email.toLowerCase(), otp, purpose: 'password_reset' });
 
@@ -461,8 +476,28 @@ exports.resetPassword = async (req, res) => {
         user.password = newPassword;
         await user.save();
 
+        // Auto-login: generate token and return user data
+        user.lastLogin = new Date();
+        await user.save({ validateModifiedOnly: true });
+
+        const token = generateToken(user._id);
+
         console.log(`✅ Password reset successful for ${email}`);
-        res.json({ success: true, message: 'Password reset successful. You can now log in.' });
+        res.json({
+            success: true,
+            message: 'Password reset successful.',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                userType: user.userType,
+                phone: user.phone,
+                profileImage: user.profileImage,
+                businessName: user.businessName,
+                theme: user.theme
+            }
+        });
     } catch (err) {
         console.error('Reset password error:', err);
         res.status(500).json({ success: false, message: 'Server error. Please try again.' });

@@ -22,15 +22,51 @@ import ProviderLogin from './features/auth/ProviderLogin';
 import ProviderSignup from './features/auth/ProviderSignup';
 import ForgotPassword from './features/auth/ForgotPassword';
 import EmergencyBooking from './features/customer/EmergencyBooking';
+import StatusNotification from './components/booking/StatusNotification';
 
 // Styles
 import './styles/themes.css';
 
+// Error Boundary — catches rendering errors to prevent white screen
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('App Error Boundary:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px', background: 'var(--background)', color: 'var(--text)' }}>
+          <h2>Something went wrong</h2>
+          <p style={{ color: 'var(--text-muted)' }}>Please refresh the page to try again.</p>
+          <button onClick={() => window.location.reload()} style={{ padding: '10px 24px', borderRadius: '8px', background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>
+            Refresh Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Protected Route — uses MockDataContext for auth
-const ProtectedRoute = ({ children, redirectTo = '/login' }) => {
+const ProtectedRoute = ({ children, requiredRole, redirectTo = '/login' }) => {
   const { currentUser } = useMockData();
   if (!currentUser) {
     return <Navigate to={redirectTo} replace />;
+  }
+  // Role-based protection
+  if (requiredRole === 'customer' && currentUser.userType === 'serviceProvider') {
+    return <Navigate to="/provider/dashboard" replace />;
+  }
+  if (requiredRole === 'provider' && currentUser.userType !== 'serviceProvider') {
+    return <Navigate to="/customer/dashboard" replace />;
   }
   return children;
 };
@@ -50,6 +86,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
+          <ErrorBoundary>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
@@ -60,8 +97,8 @@ function App() {
             <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/track" element={<Navigate to="/customer/dashboard?tab=track" replace />} />
-            <Route path="/book-service" element={<ProtectedRoute><BookService /></ProtectedRoute>} />
-            <Route path="/emergency-booking" element={<ProtectedRoute><EmergencyBooking /></ProtectedRoute>} />
+            <Route path="/book-service" element={<ProtectedRoute requiredRole="customer"><BookService /></ProtectedRoute>} />
+            <Route path="/emergency-booking" element={<ProtectedRoute requiredRole="customer"><EmergencyBooking /></ProtectedRoute>} />
 
             {/* Legacy Routes - Redirect */}
             <Route path="/consumer-login" element={<Navigate to="/login" replace />} />
@@ -77,7 +114,7 @@ function App() {
             <Route
               path="/customer/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="customer">
                   <CustomerDashboard />
                 </ProtectedRoute>
               }
@@ -87,7 +124,7 @@ function App() {
             <Route
               path="/provider/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRole="provider">
                   <ServiceDashboard />
                 </ProtectedRoute>
               }
@@ -96,7 +133,11 @@ function App() {
             {/* Catch All */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </ErrorBoundary>
         </Router>
+
+        {/* Real-time Status Change Notification */}
+        <StatusNotification />
 
         {/* Toast Notifications */}
         <Toaster

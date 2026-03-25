@@ -3,11 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Car, Menu, X, Sun, Moon, User, LogOut,
-    LayoutDashboard, Settings, ChevronDown
+    LayoutDashboard, Settings, ChevronDown, ArrowLeft
 } from 'lucide-react';
 import { useMockData } from '../../context/MockDataContext';
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../ui/Button';
+import BackButton from '../ui/BackButton';
 import styles from './Navbar.module.css';
 
 const Navbar = ({ variant = 'default' }) => {
@@ -85,6 +86,9 @@ const Navbar = ({ variant = 'default' }) => {
                     <img src="/fos-icon.png" alt="FastOnService" className={styles.logoImg} />
                     <span className={styles.logoText}>Fast<span className={styles.logoAccent}>On</span>Service</span>
                 </Link>
+
+                {/* Desktop Back Button */}
+                <BackButton />
 
                 {/* Desktop Navigation - only on default variant */}
                 {!isDashboard && (
