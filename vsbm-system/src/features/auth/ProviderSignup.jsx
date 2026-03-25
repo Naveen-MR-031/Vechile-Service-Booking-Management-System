@@ -66,7 +66,8 @@ const ProviderSignup = () => {
             if (!formData.email) newErrors.email = 'Email is required';
             else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email';
             if (!formData.password) newErrors.password = 'Password is required';
-            else if (formData.password.length < 6) newErrors.password = 'Min 6 characters';
+            else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{10,}$/.test(formData.password))
+                newErrors.password = 'Must be 10+ chars with uppercase, lowercase & special character';
             if (formData.password !== formData.confirmPassword) {
                 newErrors.confirmPassword = 'Passwords do not match';
             }

@@ -133,7 +133,8 @@ const ForgotPassword = () => {
         e.preventDefault();
         const newErrors = {};
         if (!newPassword) newErrors.newPassword = 'Password is required';
-        else if (newPassword.length < 6) newErrors.newPassword = 'Min 6 characters';
+        else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{10,}$/.test(newPassword))
+            newErrors.newPassword = 'Must be 10+ chars with uppercase, lowercase & special character';
         if (newPassword !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
         if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
 

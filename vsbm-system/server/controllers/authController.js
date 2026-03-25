@@ -441,8 +441,9 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required' });
         }
 
-        if (newPassword.length < 6) {
-            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{10,}$/;
+        if (!strongPasswordRegex.test(newPassword)) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 10 characters with 1 uppercase, 1 lowercase, and 1 special character' });
         }
 
         const otpRecord = await OTP.findOne({ email: email.toLowerCase(), otp });
